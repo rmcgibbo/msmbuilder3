@@ -1,5 +1,9 @@
 import numpy as np
+import scipy.linalg
 from base import BaseModeller, TransformerMixin, UpdateableEstimatorMixin
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
@@ -27,17 +31,18 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         zero variance (Default: 1E-8)
     """
     def __init__(self, lag, n_components=None, pca_cutoff=1E-8):
-        self.n_components = n_components
         self.lag = lag
+        self.n_components = n_components
+        self.pca_cutoff = pca_cutoff
 
         # set up containers for running sums
-        self.running_corr_0_dt_ = None
-        self.running_corr_0_0_ = None
-        self.running_corr_dt_dt_ = None
+        self.running_corr_mat_0_dt_ = None
+        self.running_corr_mat_0_0_ = None
+        self.running_corr_mat_dt_dt_ = None
         self.running_sum_0_ = None
         self.running_sum_dt_ = None
 
-        self.total_frames_ = 0
+        self.total_samples_ = 0
 
         self._have_estimate_ = False
 
@@ -79,10 +84,10 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
 
             n_features = row.shape[1]
 
-            if self.running_corr_0_0_ is None:
-                self.running_corr_0_0_ = np.zeros((n_features, n_features))
-                self.running_corr_0_dt_ = np.zeros((n_features, n_features))
-                self.running_corr_dt_dt_ = np.zeros((n_features, n_features))
+            if self.running_corr_mat_0_0_ is None:
+                self.running_corr_mat_0_0_ = np.zeros((n_features, n_features))
+                self.running_corr_mat_0_dt_ = np.zeros((n_features, n_features))
+                self.running_corr_mat_dt_dt_ = np.zeros((n_features, n_features))
                 self.running_sum_0_ = np.zeros(n_features)
                 self.running_sum_dt_ = np.zeros(n_features)
 
@@ -134,7 +139,7 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
 
         super(tICAVectorizer, self).clear()
 
-        self.total_frames_ = 0
+        self.total_samples_ = 0
         self._have_estimate_ = False
 
 
@@ -157,12 +162,12 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         # first we have to do PCA, since odds are our covariance matrix
         # is not positive definite
 
-        self.mean_ = (self.running_sum_0_ + self.running_sum_dt_) / (2. * float(self.total_frames_))
+        self.mean_ = (self.running_sum_0_ + self.running_sum_dt_) / (2. * float(self.total_samples_))
         outer_mean = np.outer(self.mean_, self.mean_)
-        cov_mat = (self.running_corr_0_0_ + self.running_corr_dt_dt_) / (2. * float(self.total_frames_))
+        cov_mat = (self.running_corr_mat_0_0_ + self.running_corr_mat_dt_dt_) / (2. * float(self.total_samples_))
         cov_mat = cov_mat - outer_mean
 
-        timelag_corr_mat = (self.running_corr_0_dt_ + self.running_corr_0_dt_.T) / (2. * float(self.total_frames_))
+        timelag_corr_mat = (self.running_corr_mat_0_dt_ + self.running_corr_mat_0_dt_.T) / (2. * float(self.total_samples_))
         timelag_corr_mat = timelag_corr_mat - outer_mean
 
         pca_vals, pca_vecs = np.linalg.eigh(cov_mat)
@@ -237,16 +242,16 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
 
             n_features = row.shape[1]
 
-            if n_features != top_pcs.shape[0]:
+            if n_features != top_tics.shape[0]:
                 raise RuntimeError("data is not the right shape")
 
             proj_X.append(row.dot(top_tics))
             # are you supposed to subtract the mean before projecting?
             # if so, then this is the correct line:
 
-            # proj_X.append((row - self.mean_).dot(top_pcs)
+            # proj_X.append((row - self.mean_).dot(top_tics)
 
-            # but, this just adds a constant vector to each point, (-self.mean_.dot(top_pcs))
+            # but, this just adds a constant vector to each point, (-self.mean_.dot(top_tics))
             # so I don't think it actually matters..
 
         if return_list:
