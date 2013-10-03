@@ -71,7 +71,7 @@ class BaseModeller(object):
         except TypeError:
             # no explicit __init__
             args = []
-        
+
         args.sort()
         return args
 
@@ -159,8 +159,9 @@ class EstimatorMixin(object):
         params = self.get_params()
         estimates = {k: getattr(self, k) for k in self._get_estimate_names()}
 
-        simple_typemap = {int: tables.Int64Col(), float: tables.FloatCol(), str: tables.StringCol(1024),
-                          np.int64: tables.Int64Col(), np.int32: tables.Int32Col(), np.float32: tables.Float32Col(),
+        simple_typemap = {int: tables.Int64Col(), float: tables.FloatCol(),
+                          str: tables.StringCol(1024), np.int64: tables.Int64Col(),
+                          np.int32: tables.Int32Col(), np.float32: tables.Float32Col(),
                           np.float64: tables.Float64Col(), bool: tables.BoolCol()}
 
         table_description = {}
@@ -176,13 +177,20 @@ class EstimatorMixin(object):
                     table_description[key] = simple_typemap[type(value)]
                     table_entries[key] = value
                 except KeyError:
-                    raise RuntimeError("I don't know how to serialize the parameter %s (type=%s) to pytables" 
+                    raise RuntimeError("I don't know how to serialize the parameter %s (type=%s) to pytables"
                                        % (key, type(value)))
 
-        table = parentnode._v_file.create_table(group, 'params', expectedrows=1, description=table_description)
+        # we want to make this somewhat unique, because it can't clash with an
+        # array
+        table_name = '%s__params_table' % self.__class__.__name__
+        table = parentnode._v_file.create_table(group, table_name, expectedrows=1,
+                                                description=table_description)
+        row = table.row
         for key, value in table_entries.iteritems():
-            table.row[key] = value
-        
+            row[key] = value
+        row.append()
+        table.flush()
+
         return group
 
     @classmethod
@@ -190,13 +198,37 @@ class EstimatorMixin(object):
         """Instantiate a copy of this estimator from a pytables group.
         This performs the inverse of to_pytables.
         """
+        table_name = '%s__params_table' % group._v_name
+        array_names = [e for e in group._v_children.keys() if e != table_name]
 
-        instance = cls()
-        # instance.set_params(extract parameters from group)
-        # if this group contains any nested subgroups and cls
-        # is some kind of meta-modeller like a pipeline, then
-        # this method needs to recursively call from_pytables
-        # on the subgroups, to fully instantiate instance.
+        # extract the data out of the tables and arrays. the table hold "simple"
+        # data like strings, ints, bools, etc. and the arrays hold numpy arrays
+        table = getattr(group, table_name)
+        table_data = dict(zip(table.description._v_names, table[0]))
+        array_data = {n:getattr(group, n)[:] for n in array_names}
+
+        # figure out how each data source passed in. some of the data is sent
+        # in via init (the parameters). and some of the data is sent in via
+        # setattr (the estimated quantites)
+        init_data = {}
+        setattr_data = {}
+        init_params_names = cls._get_param_names()
+        for k, v in itertools.chain(table_data.iteritems(), array_data.iteritems()):
+            if k in init_params_names:
+                init_data[k] = v
+            else:
+                setattr_data[k] = v
+
+        for k in init_params_names:
+            if k not in init_data:
+                # Nones are not saved in the table (there is no column type in
+                # pytables for None), but are indicated by their absense.
+                init_data[k] = None
+
+        instance = cls(**init_data)
+        for k, v in setattr_data.iteritems():
+            setattr(instance, k, v)
+
         return instance
 
 

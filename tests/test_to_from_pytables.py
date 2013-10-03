@@ -16,7 +16,7 @@ def teardown():
 
 
 class MyEstimator(BaseModeller, EstimatorMixin):
-    def __init__(self, a=1, b='a', c=None, d=False, e=np.zeros(3)):
+    def __init__(self, c, a, b, d, e):
         self.a = a
         self.b = b
         self.c = c
@@ -31,20 +31,29 @@ class MyEstimator(BaseModeller, EstimatorMixin):
 
 
 def test_estimator_pytables():
-    m1 = MyEstimator().fit(None)
+    m1 = MyEstimator(a=1, b='a', c=None, d=False, e=np.zeros(3)).fit(None)
 
     f = tables.open_file(fn, 'w')
     m1.to_pytables(f.root)
     f.close()
 
     g = tables.open_file(fn)
-    m2 = MyEstimator.from_pytables(g.root)
+    m2 = MyEstimator.from_pytables(g.root.MyEstimator)
+
+    print m1.__dict__
+    print m2.__dict__
 
     for key, value in m1.get_params().iteritems():
-        eq(value, getattr(m2, key, object()), err_msg='error on param key=%s' % key)
+        if any(isinstance(value, t) for t in [int, float, str]):
+            assert value == getattr(m2, key, object())
+        else:
+            eq(value, getattr(m2, key, object()), err_msg='error on param key=%s' % key)
 
     for key in m1._get_estimate_names():
         value = getattr(m1, key)
-        eq(value, getattr(m2, key, object()), err_msg='error on estimate key=%s' % key)
+        if any(isinstance(value, t) for t in [int, float, str]):
+            assert value == getattr(m2, key, object())
+        else:
+            eq(value, getattr(m2, key, object()), err_msg='error on estimate key=%s' % key)
 
     g.close()
