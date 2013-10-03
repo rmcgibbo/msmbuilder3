@@ -1,5 +1,5 @@
 import numpy as np
-from .base import BaseModeller, TransformerMixin
+from base import BaseModeller, TransformerMixin
 
 
 class MergingTransformer(BaseModeller, TransformerMixin):

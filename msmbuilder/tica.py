@@ -1,6 +1,6 @@
-from mdtraj.vectorizer import (BaseModeller, EstimatorMixin,
-                               TransformerMixin, UpdateableEstimatorMixin)
 import numpy as np
+from base import BaseModeller, TransformerMixin, UpdateableEstimatorMixin
+
 
 class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
     """
