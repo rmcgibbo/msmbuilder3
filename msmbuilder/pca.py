@@ -4,8 +4,9 @@ from base import BaseModeller, TransformerMixin, UpdateableEstimatorMixin
 
 class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
     """
-    Class for doing Principal Component Analysis (PCA) on any multivariate
-    dataset. PCA finds the linear combinations of input coordinates that 
+    Principal Component Analysis (PCA) on any multivariate dataset.
+
+    PCA finds the linear combinations of input coordinates that
     maximize their explained variance, subject to being uncorrelated to the
     previous.
 
@@ -17,11 +18,10 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
     """
 
     def __init__(self, n_components=None):
-
         self.n_components = n_components
-    
+
         # running_corr_ is the running sum of the cross-correlation of the data
-        # with itself ( Outer(X, X) ) 
+        # with itself ( Outer(X, X) )
         self.running_corr_mat_ = None
         # running_sum_ is the running sum of the data, for calculating the mean
         self.running_sum_ = None
@@ -36,19 +36,16 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         # boolean telling us if we have an estimate of the PCs or not
         self._have_estimate_ = False
 
-    
     def clear(self):
+        """Clear the current state to do PCA on new data
         """
-        clear the current state to do PCA on new data
-        """
-        
+
         super(PCAVectorizer, self).clear()
-        
+
         # since the above sets everything to None, I want these to be different:
         self._have_estimate_ = False
         self.total_frames_ = 0
 
-            
     def fit_update(self, X):
         """
         Update the internal state with new data, X
@@ -73,7 +70,6 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         # we have updated the data, so we no longer have the PCs.
 
         for row in X:
-
             if not isinstance(row, np.ndarray):
                 raise RuntimeError("data must be numpy.ndarray's or a list of arrays")
 
@@ -84,7 +80,7 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
 
             if len(shape) > 2:
                 raise RuntimeError("data cannot be more than two-dimensional")
-            
+
             n_features = row.shape[1]
 
             if self.running_corr_mat_ is None:
@@ -101,16 +97,15 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
 
         return self
 
-
     def fit(self, X):
         """
-        calculate the principal components for data, X
+        Calculate the principal components of a multivariate dataset
 
         Parameters
         ----------
         X : np.ndarray or list of np.ndarrays
             data or list of numpy arrays
-        
+
         Returns
         -------
         self
@@ -128,13 +123,12 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
 
         return self
 
-
     def compute_components(self):
         """
         Compute the components according to the data that has been accumulated
         with fit or fit_update.
         """
-            
+
         self.mean_ = self.running_sum_ / float(self.total_samples_)
         cov_mat = self.running_corr_mat_ / float(self.total_samples_) - \
                     np.outer(self.mean_, self.mean_)
@@ -142,23 +136,22 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         vals, vecs = np.linalg.eigh(cov_mat)
 
         ind = np.argsort(vals)[::-1]
-            
+
         self.vals_ = vals[ind]
         self.vecs_ = vecs[:, ind]
 
         self._have_estimate_ = True
 
-
     def transform(self, X):
         """
-        Transform some data, X, onto the n_components principal components
+        Transform a dataset into the principle components subspace
 
         Parameters
         ----------
         X : np.ndarray or list of np.ndarray's
             data to project onto the top n_components. Should be a single two-
             dimensional array (n_samples, n_coordinates) or a list of arrays
-            
+
         Returns
         -------
         proj_X : np.ndarray or list of np.ndarray's
@@ -185,7 +178,7 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         for row in X:
             if not isinstance(row, np.ndarray):
                 raise RuntimeError("data contains rows that are not np.ndarray's")
-    
+
             shape = row.shape
             if len(shape) == 1:
                 row = row.reshape((1, -1))
@@ -201,9 +194,9 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
             proj_X.append(row.dot(top_pcs))
             # are you supposed to subtract the mean before projecting?
             # if so, then this is the correct line:
-            
+
             # proj_X.append((row - self.mean_).dot(top_pcs))
-            
+
             # but, this just adds a constant vector to each point, (-self.mean_.dot(top_pcs))
             # so I don't think it actually matters..
 

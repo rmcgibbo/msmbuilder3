@@ -4,32 +4,29 @@ from base import BaseModeller, TransformerMixin, UpdateableEstimatorMixin
 
 class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
     """
-    Class for doing time-structure based Independent Component Analysis
-    (tICA). See (Schwantes, CR and Pande, VS. JCTC, 2013, 9 (4), pp 2000-09)
-    for further details.
+    Time-Structure Based Independent Component Analysis (tICA).
+
+    See (Schwantes, CR and Pande, VS. JCTC, 2013, 9 (4), pp 2000-09) for
+    further details.
 
     Briefly, tICA finds the linear combinations that maximize the projected
     autocorrelation function. This means that the tICA components correspond
     to the slowest decorrelating linear combinations of the input coordinates.
+
+    Parameters
+    ----------
+    lag : int
+        lag time to use in calcualting the timelag correlation matrix
+        the unit is in frames
+    n_components : int, optional
+        number of components to project onto. You can set this later...
+    pca_cutoff : float
+        The estimated covariance matrix must be strictly positive definite.
+        To ensure this, we can work in the PCA space defined by all PCs
+        with nonzero variance. The pca_cutoff is the cutoff for defining
+        zero variance (Default: 1E-8)
     """
     def __init__(self, lag, n_components=None, pca_cutoff=1E-8):
-        """
-        initialize the tICAVectorizer object
-
-        Parameters
-        ----------
-        lag : int
-            lag time to use in calcualting the timelag correlation matrix
-            the unit is in frames
-        n_components : int, optional
-            number of components to project onto. You can set this later...
-        pca_cutoff : float
-            The estimated covariance matrix must be strictly positive definite.
-            To ensure this, we can work in the PCA space defined by all PCs
-            with nonzero variance. The pca_cutoff is the cutoff for defining
-            zero variance (Default: 1E-8)
-        """
-        
         self.n_components = n_components
         self.lag = lag
 
@@ -44,7 +41,7 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
 
         self._have_estimate_ = False
 
-        
+
     def fit_update(self, X):
         """
         Update the internal state with new data, X
@@ -54,7 +51,7 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         X : np.ndarray or list of np.ndarrays
             Data to add to the estimate of the tICA matrices. This can be a list
             of numpy arrays, or a single numpy array. Each array should be two-
-            dimensional: (n_samples, n_coordinates). 
+            dimensional: (n_samples, n_coordinates).
 
         Returns
         -------
@@ -111,7 +108,7 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         ----------
         X : np.ndarray or list of np.ndarrays
             data or list of numpy arrays
-        
+
         Returns
         -------
         self
@@ -129,12 +126,12 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
 
         return self
 
-        
+
     def clear(self):
         """
         clear the internal state, to analyze new data with tICA
         """
-        
+
         super(tICAVectorizer, self).clear()
 
         self.total_frames_ = 0
@@ -148,7 +145,7 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         C v = w S v
 
         We will restrict our solutions to linear combinations of
-        non-zero variance principal components. As long as we really are 
+        non-zero variance principal components. As long as we really are
         ignoring only the zero-variance PCs this will give the right
         solutions.
 
@@ -156,7 +153,7 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         Christian Schwantes (schwancr@stanford.edu) for a detailed
         explanation.
         """
-        
+
         # first we have to do PCA, since odds are our covariance matrix
         # is not positive definite
 
@@ -203,7 +200,7 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         X : np.ndarray or list of np.ndarray's
             data to project onto the top n_components. Should be a single two-
             dimensional array (n_samples, n_coordinates) or a list of arrays
-            
+
         Returns
         -------
         proj_X : np.ndarray or list of np.ndarray's

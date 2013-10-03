@@ -6,7 +6,8 @@ import mdtraj as md
 
 
 class BaseModeller(object):
-    """Base class for all statistical modelling
+    """
+    Base class for all statistical modelling
 
     Notes
     -----
@@ -16,7 +17,8 @@ class BaseModeller(object):
     """
 
     def get_params(self):
-        """Get parameters for this modeller
+        """
+        Get parameters for this modeller
 
         Returns
         -------
@@ -31,7 +33,8 @@ class BaseModeller(object):
         return out
 
     def set_params(self, **params):
-        """Set the parameters of this modeller
+        """
+        Set the parameters of this modeller
 
         Returns
         -------
@@ -51,7 +54,9 @@ class BaseModeller(object):
 
     @classmethod
     def _get_param_names(cls):
-        """Get the parameter names for this modeller"""
+        """
+        Get the parameter names for this modeller
+        """
         try:
             init = cls.__init__
             args, varargs, kw, default = inspect.getargspec(init)
@@ -75,7 +80,8 @@ class TransformerMixin(object):
     """Mixin class for all transformers"""
 
     def transform(self, X):
-        """Transform a dataset X from one represenation/basis to another
+        """
+        Transform a dataset X from one represenation/basis to another
 
         Parameters
         -----------
@@ -98,7 +104,8 @@ class EstimatorMixin(object):
     """Mixin class for all estimators"""
 
     def fit(self, X):
-        """Fit this vectorizer to training data
+        """
+        Fit this vectorizer to training data
 
         Parameters
         ----------
@@ -114,7 +121,8 @@ class EstimatorMixin(object):
         return self
 
     def _get_estimate_names(self):
-        """Each estimator object, when `fit` on a dataset, produces
+        """
+        Each estimator object, when `fit` on a dataset, produces
         estimates which are instance variables on the class whose names
         end with an underscore, e.g. self.mean_ or self.variance_.
 
@@ -128,7 +136,8 @@ class EstimatorMixin(object):
         return [e for e in self.__dict__.keys() if e.endswith('_') and not e.startswith('_')]
 
     def to_pytables(self, parentnode):
-        """Serialize this estimator to a PyTables group, attaching
+        """
+        Serialize this estimator to a PyTables group, attaching
         it to the parent node.
 
         It this estimator wraps a series of other estimators, as
@@ -193,7 +202,8 @@ class EstimatorMixin(object):
 
 class UpdateableEstimatorMixin(EstimatorMixin):
     def fit_update(self, X):
-        """Update the statistical model described by this estimator by
+        """
+        Update the statistical model described by this estimator by
         exposing it to new data, without "forgetting" the data that
         it has seen in any previous calls to `fit` or `fit_update`
 
@@ -209,7 +219,8 @@ class UpdateableEstimatorMixin(EstimatorMixin):
         raise NotImplementedError()
 
     def fit(self, X):
-        """Fit this estimator to training data
+        """
+        Fit this estimator to training data
 
         Parameters
         ----------
@@ -231,7 +242,8 @@ class UpdateableEstimatorMixin(EstimatorMixin):
         return self
 
     def clear(self):
-        """Clear the state of this estimator, so that it can be refit
+        """
+        Clear the state of this estimator, so that it can be refit
         on fresh data without retaining knowledge of data it has been
         previously exposed to.
 

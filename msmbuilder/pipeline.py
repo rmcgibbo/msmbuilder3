@@ -3,7 +3,8 @@ from base import BaseModeller, TransformerMixin
 
 
 class MergingTransformer(BaseModeller, TransformerMixin):
-    """Transforms a trajectory or timeseries by applying a collection of
+    """
+    Transforms a trajectory or timeseries by applying a collection of
     other transformers and stacking the results together.
 
     This transformer applies a series of other transformers to the input
@@ -35,7 +36,8 @@ class MergingTransformer(BaseModeller, TransformerMixin):
 
 
 class PipelineTransformer(BaseModeller, TransformerMixin):
-    """Transforms a trajectory or timeseries by applying a pipeline
+    """
+    Transforms a trajectory or timeseries by applying a pipeline
     sequence of transformations in order, with the results of one
     feeding the input to the subsequent transformer.
 
@@ -52,7 +54,8 @@ class PipelineTransformer(BaseModeller, TransformerMixin):
         self.transformers = transformers
 
     def transform(self, X):
-        """Apply this sequence of transformations to new data
+        """
+        Apply this sequence of transformations to new data
 
         Parameters
         ----------
