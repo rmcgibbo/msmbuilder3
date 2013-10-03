@@ -24,7 +24,7 @@ class PositionVectorizer(BaseModeller, TransformerMixin):
         will be used *as is*.
     """
 
-    def __init__(self, reference=None, alignment_indices=None):
+    def __init__(self, reference=None, alignment_indices=slice(None)):
         self.alignment_indices = alignment_indices
         self.reference = reference
 
@@ -33,11 +33,12 @@ class PositionVectorizer(BaseModeller, TransformerMixin):
         """_target is the cartesian coordinates of the alignment
         atoms of the first frame of the reference trajectory."""
         if not hasattr(self, '__target') or not self.__target:
-            self.__target = self._reference.xyz[0, self.alignment_indices]
+            self.__target = self.reference.xyz[0, self.alignment_indices]
         return self.__target
 
     def transform(self, X):
-        """Extract the positions of all of the atoms in a trajectory
+        """
+        Extract the positions of all of the atoms in a trajectory
         after aliging them to a reference
 
         Parameters
@@ -110,7 +111,7 @@ class DistanceVectorizer(BaseModeller, TransformerMixin):
         return self._transform(X)
 
     def _transform(self, X):
-        return md.geometry.compute_distances(X, self.pair_indices, self.use_periodic_boundaries)
+        return md.geometry.compute_distances(X, self.pair_indices, self.use_periodic_boundries)
 
 
 class AngleVectorizer(BaseModeller, TransformerMixin):
@@ -191,7 +192,8 @@ class DihedralVectorizer(BaseModeller, TransformerMixin):
         self.quartet_indices = quartet_indices
 
     def transform(self, X):
-        """Extract torsion angles from a trajectory
+        """
+        Extract torsion angles from a trajectory
 
         Parameters
         ----------
