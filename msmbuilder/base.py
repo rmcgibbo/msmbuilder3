@@ -161,7 +161,7 @@ class EstimatorMixin(object):
 
         simple_typemap = {int: tables.Int64Col(), float: tables.FloatCol(), str: tables.StringCol(1024),
                           np.int64: tables.Int64Col(), np.int32: tables.Int32Col(), np.float32: tables.Float32Col(),
-                          np.float64: tables.Float64Col(), bool: tables.BoolCol}
+                          np.float64: tables.Float64Col(), bool: tables.BoolCol()}
 
         table_description = {}
         table_entries = {}
