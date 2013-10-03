@@ -1,3 +1,8 @@
+"""Base classes for modelling with msmbuilder3"""
+# This API was was adapted from the sklearn package. Significant portions
+# of the code are copyright Gael Varoquaux and the scikit-learn project,
+# licensed under the BSD 3 clause
+
 import inspect
 import itertools
 import tables

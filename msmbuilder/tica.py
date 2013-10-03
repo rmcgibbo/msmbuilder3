@@ -1,3 +1,5 @@
+"""Time-Structure Based Independent Component Analysis"""
+
 import numpy as np
 import scipy.linalg
 from base import BaseModeller, TransformerMixin, UpdateableEstimatorMixin

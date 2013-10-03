@@ -1,3 +1,5 @@
+"""Classes for transforming molecular dynamics trajectories into a vector space"""
+
 import numpy as np
 import mdtraj as md
 from .base import BaseModeller, TransformerMixin
@@ -58,12 +60,38 @@ class PositionVectorizer(BaseModeller, TransformerMixin):
 
     def _transform(self, X):
         # This can be probably done more efficiently in C
-        X_new = np.empty_like(X.xyz)
+        X_new = np.empty((X.n_frames, X.n_atoms*3))
         for i in range(X.n_frames):
-            X_new[i] = md.geometry.alignment.transform(X.xyz[i, self.alignment_indices], self._target)
+            X_new[i] = md.geometry.alignment.transform(X.xyz[i, self.alignment_indices], self._target).reshape(-1)
 
         return X_new
 
+    def inverse_transform(self, X):
+        """
+        Transform the data back into its original space by returning a
+        trajectory whose transform would be X
+
+        Note that the transform() -> inverse_transform() cycle is *not*
+        information preserving. Rotational and translational degrees of
+        freedom are lost, as is all metadata (molecular topology,
+        box shape, etc)
+
+        Parameters
+        ----------
+        X : numpy array of shape [n_frames, n_atoms*3]
+
+        Returns
+        -------
+        T : Trajectory
+        """
+        if not isinstance(X, np.ndarray):
+            raise TypeError('X must be a numpy array')
+        if not X.ndim == 2:
+            raise ValueError('X must be two dimensional. You supplied ndim=%s' % X.ndim)
+        if X.shape[1] % 3 != 0:
+            raise ValueError('The length of the second dimension of X '
+                             'must be an multiple of 3')
+        return md.Trajectory(X.reshape((X.shape[0], X.shape[1]/3, 3)), topology=None)
 
 class DistanceVectorizer(BaseModeller, TransformerMixin):
     """
@@ -78,7 +106,7 @@ class DistanceVectorizer(BaseModeller, TransformerMixin):
     pair_indices : numpy_array of shape [n_distances, 2]
         Pairs of indices of the atoms between which you wish to calculate
         distances
-    use_periodic_boundries : bool
+    periodic : bool
         Compute distances accross periodic boundary conditions. This is used
         only when when the trajectories contain PBC information.
 
@@ -88,9 +116,9 @@ class DistanceVectorizer(BaseModeller, TransformerMixin):
     >>> distances = DistanceVectorizer([[1,2]]).transform(X)
     """
 
-    def __init__(self, pair_indices, use_periodic_boundries=False):
+    def __init__(self, pair_indices, periodic=False):
         self.pair_indices = pair_indices
-        self.use_periodic_boundries = use_periodic_boundries
+        self.periodic = periodic
 
     def transform(self, X):
         """
@@ -111,7 +139,7 @@ class DistanceVectorizer(BaseModeller, TransformerMixin):
         return self._transform(X)
 
     def _transform(self, X):
-        return md.geometry.compute_distances(X, self.pair_indices, self.use_periodic_boundries)
+        return md.geometry.compute_distances(X, self.pair_indices, self.periodic)
 
 
 class AngleVectorizer(BaseModeller, TransformerMixin):

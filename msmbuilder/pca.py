@@ -1,3 +1,5 @@
+"""Principle Component Analysis"""
+
 import numpy as np
 from base import BaseModeller, TransformerMixin, UpdateableEstimatorMixin
 
@@ -83,7 +85,6 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         # we have updated the data, so we no longer have the PCs.
 
         for row in X:
-            print row.shape
             if not isinstance(row, np.ndarray):
                 raise RuntimeError("data must be numpy.ndarray's or a list of arrays")
 
