@@ -4,7 +4,8 @@ from .base import BaseModeller, TransformerMixin
 
 
 class PositionVectorizer(BaseModeller, TransformerMixin):
-    """Transforms a molecular dynamics trajectory into a multvariate
+    """
+    Transform a molecular dynamics trajectory into a multvariate
     timeseries of the positions of specified atoms in cartesian space
 
     This transformer will extract the positions of the atoms in a trajectory
@@ -64,7 +65,8 @@ class PositionVectorizer(BaseModeller, TransformerMixin):
 
 
 class DistanceVectorizer(BaseModeller, TransformerMixin):
-    """Transforms a molecular dynamics trajectory into a multvariate 
+    """
+    Transform a molecular dynamics trajectory into a multvariate 
     timeseris of pairwise distances between specified atoms
 
     This transformer turns trajectories into vectors of pairwise distances
@@ -90,7 +92,8 @@ class DistanceVectorizer(BaseModeller, TransformerMixin):
         self.use_periodic_boundries = use_periodic_boundries
 
     def transform(self, X):
-        """Extract the distance between pairs of atoms from a trajectory
+        """
+        Extract the distance between pairs of atoms from a trajectory
 
         Parameters
         ----------
@@ -111,7 +114,8 @@ class DistanceVectorizer(BaseModeller, TransformerMixin):
 
 
 class AngleVectorizer(BaseModeller, TransformerMixin):
-    """Transforms a molecular dynamics trajectory into a multivariate
+    """
+    Transform a molecular dynamics trajectory into a multivariate
     timeseries of the angles between specific atoms
 
     This transformer turns trajectories into vectors of angles
@@ -159,7 +163,8 @@ class AngleVectorizer(BaseModeller, TransformerMixin):
 
 
 class DihedralVectorizer(BaseModeller, TransformerMixin):
-    """Transforms a trajectory into a multivariate timeseries of the
+    """
+    Transform a trajectory into a multivariate timeseries of the
     torsion angles between specific atoms
 
     This transformer turns trajectories into vectors of torsion angles
