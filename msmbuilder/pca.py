@@ -6,15 +6,28 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
     """
     Principal Component Analysis (PCA) on any multivariate dataset.
 
-    PCA finds the linear combinations of input coordinates that
-    maximize their explained variance, subject to being uncorrelated to the
-    previous.
+    PCA finds the uncorrelated linear combinations of input coordinates that
+    maximize "explained variance" in the dataset, and can be used to project
+    multivariate datasets into a lower dimensional space.
 
     The linear combinations can be shown to be the eigenvectors of the
     covariance matrix, S:
 
     S = E[ (X - mean)(X - mean)^T ]
 
+    Parameters
+    ----------
+    n_components : int
+         Number of components to keep. If n_components is None, all of the components will be kept
+
+    Attributes
+    ----------
+    components_ : array of shape [n_components, n_features]
+        The components with the maximum variance
+    eigenvectors_ : array of shape [n_features, n_features]
+        The full collection of all of the components, ordered by variance
+    eigenvalues_ : array of shape [n_features]
+        The eigenvalues of the covariance matrix, S
     """
 
     def __init__(self, n_components=None):
@@ -25,7 +38,7 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         self.running_corr_mat_ = None
         # running_sum_ is the running sum of the data, for calculating the mean
         self.running_sum_ = None
-        # total_frames_ is the number of frames that we have used in the estimator
+        # total_samples_ is the number of frames that we have used in the estimator
         self.total_samples_ = 0
 
         # containers for the results:
@@ -40,11 +53,11 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         """Clear the current state to do PCA on new data
         """
 
-        super(PCAVectorizer, self).clear()
+        super(PCA, self).clear()
 
         # since the above sets everything to None, I want these to be different:
         self._have_estimate_ = False
-        self.total_frames_ = 0
+        self.total_samples_ = 0
 
     def fit_update(self, X):
         """
@@ -70,6 +83,7 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         # we have updated the data, so we no longer have the PCs.
 
         for row in X:
+            print row.shape
             if not isinstance(row, np.ndarray):
                 raise RuntimeError("data must be numpy.ndarray's or a list of arrays")
 
@@ -87,7 +101,7 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
                 self.running_corr_mat_ = np.zeros((n_features, n_features))
                 self.running_sum_ = np.zeros(n_features)
 
-            elif n_features != self.cov_mat_.shape[0]:
+            elif n_features != self.running_corr_mat_.shape[0]:
                 raise RuntimeError("data does not match the shape of the internal state.")
 
             self.running_corr_mat_ += row.T.dot(row)
@@ -111,16 +125,7 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         self
         """
         self.clear()
-
-        if isinstance(X, list):
-            for row in X:
-                self.fit_update(row)
-
-        else:
-            self.fit_update(row)
-
-        self.compute_components()
-
+        self.fit_update(X)
         return self
 
     def compute_components(self):
@@ -132,15 +137,30 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
         self.mean_ = self.running_sum_ / float(self.total_samples_)
         cov_mat = self.running_corr_mat_ / float(self.total_samples_) - \
                     np.outer(self.mean_, self.mean_)
-
         vals, vecs = np.linalg.eigh(cov_mat)
-
         ind = np.argsort(vals)[::-1]
 
-        self.vals_ = vals[ind]
-        self.vecs_ = vecs[:, ind]
-
+        self._eigenvalues_ = vals[ind]
+        self._vectors_ = vecs[:, ind]
         self._have_estimate_ = True
+
+    @property
+    def eigenvectors_(self):
+        if not self._have_estimate_:
+            self.compute_components()
+        return self._vectors_
+
+    @property
+    def eigenvalues_(self):
+        if not self._have_estimate_:
+            self.compute_components()
+        return self._eigenvalues_
+
+    @property
+    def components_(self):
+        if not self._have_estimate_:
+            self.compute_components()
+        return self._vectors_[:, :self.n_components].T
 
     def transform(self, X):
         """
@@ -172,7 +192,7 @@ class PCA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
             X = [X]
             return_list = False
 
-        top_pcs = self.vecs_[:, :self.n_components]
+        top_pcs = self.eigenvectors_[:, :self.n_components]
 
         proj_X = []
         for row in X:
