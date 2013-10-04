@@ -9,11 +9,11 @@ from msmbuilder3.config.app import MSMBuilderApp
 from msmbuilder3.base import TransformerMixin
 from msmbuilder3 import (PositionVectorizer, DistanceVectorizer,
                          AngleVectorizer, DihedralVectorizer)
-
+from msmbuilder3 import DataSet
 
 class VectorApp(MSMBuilderApp):
     name = 'vector'
-    path = 'msmbuilder3.commands.vectorapp.VectorApp'
+    path = 'msmbuilder3.command.vectorapp.VectorApp'
     short_description = '''Transform molecular dynamics trajectories into multidimensional
                            timeseries in a suitable vector space'''
     long_description = ''
@@ -37,13 +37,25 @@ class VectorApp(MSMBuilderApp):
         raise NotImplementedError()
 
     def start(self):
-        pass
+        self.log.info('Writing DataSet: %s' % self.output)
+        dataset = DataSet(self.output, mode='w', name='VectorApp-%s' % self.method)
+        for i, (data, file) in enumerate(self.yield_transform(with_filenames=True)):
+            dataset[i] = data
+            dataset.set_trajfn(i, file)
+        dataset.close()
 
-    def yield_transform(self):
+    def yield_transform(self, with_filenames=False):
+        if not os.path.exists(self.input):
+            self.error('No such file or directory: %s' % self.input)
+
         if os.path.isdir(self.input):
             for file in os.listdir(self.input):
                 t = md.load(os.path.join(self.input, file))
-                yield self.vectorizer.transform(t)
+                r = self.vectorizer.transform(t)
+                if with_filenames:
+                    yield r, os.path.abspath(file)
+                else:
+                    yield r
         else:
             raise NotImplementedError()
 

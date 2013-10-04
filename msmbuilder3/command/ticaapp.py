@@ -1,15 +1,19 @@
 import tables
 import numpy as np
 import mdtraj as md
+import pandas as pd
 
 from IPython.utils.traitlets import Unicode, Int, Enum, Instance, Bool
+
 from msmbuilder3.config.app import MSMBuilderApp
-from msmbuilder3.commands.vectorapp import VectorApp
+from .vectorapp import VectorApp
 from msmbuilder3 import tICA
+from msmbuilder3 import DataSet
+
 
 class TICAApp(MSMBuilderApp):
     name = 'tICA'
-    path = 'msmbuilder3.commands.ticaapp.TICAApp'
+    path = 'msmbuilder3.command.ticaapp.TICAApp'
     short_description = 'Time-structure independent components analysis'
     long_description = '''Command line application for the tICA method. This
         tool can be used to train the tICA model AND/OR or use the tICA model
@@ -49,22 +53,27 @@ class TICAApp(MSMBuilderApp):
         return VectorApp(config=self.config)
     tica = Instance(tICA, help='The compute engine', config=False)
     is_fit = Bool(False, help='Is the model currently fit?', config=False)
-
+    input_provenance = None
+    
     def start(self):
         self.fit()
 
         if self.mode == 'fit':
-            self.log.info('Saving fit tICA object to `%s`' % self.output)
+            self.log.info('Saving fit tICA model to `%s`' % self.output)
             with tables.open_file(self.output, 'w') as f:
                 self.tica.to_pytables(f.root)
             return
 
         if self.mode in ['fit_transform', 'transform']:
-            for data in self.yield_transform():
-                print data
-            raise NotImplementedError()
-
-
+            self.log.info('Writing DataSet: %s' % self.output)
+            dataset = DataSet(self.output, mode='w', name='TICAApp')
+            if self.source == 'precomputed':
+                dataset.provenance = self.input_provenance
+                
+            for i, (data, fn) in enumerate(self.yield_transform(with_filenames=True)):
+                 dataset[i] = data
+                 dataset.set_trajfn(i, fn)
+            dataset.close()
         else:
             raise RuntimeError()
 
@@ -79,20 +88,30 @@ class TICAApp(MSMBuilderApp):
         else:
             self.tica = tICA(lag=self.lagtime, n_components=self.n_components)
             self.log.info('* Starting fitting of tICA model...')
-            for data in self.vectorapp.yield_transform():
+            for data in self._yield_input():
                 self.tica.fit_update(data)
             self.is_fit = True
             self.log.info('= Finished fitting of tICA model')
 
-    def _yield_input(self):
+    def _yield_input(self, with_filenames=False):
         if self.source == 'vector':
-            for data in self.vectorapp.yield_transform():
+            for data in self.vectorapp.yield_transform(with_filenames):
                 yield data
         else:
-            raise NotImplementedError()
+            dataset = DataSet(self.input)
+            for key in dataset.keys():
+                if with_filename:
+                    yield dataset[key], dataset.get_trajfn(key)
+                else:
+                    yield dataset[key]
+            self.input_provenance = dataset.provenance
+            dataset.close()
 
-    def yield_transform(self):
+    def yield_transform(self, with_filenames=False):
         self.log.info('*** Starting transformation of data into tIC space...')
-        for data in self._yield_input():
-            yield self.tica.transform(data)
+        for row in self._yield_input(with_filenames):
+            if with_filename:
+                yield self.tica.transform(row[0]), row[1]
+            else:
+                yield self.tica.transform(row)
         self.log.info('=== Finished transformation of data into tIC space')

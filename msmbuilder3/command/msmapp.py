@@ -6,12 +6,12 @@ import tables
 from IPython.utils.traitlets import Int, Enum, Instance, Bool
 
 from msmbuilder3.config.app import MSMBuilderApp
-from msmbuilder3.commands.kcentersapp import KCentersApp
+from .kcentersapp import KCentersApp
 
 
 class MSMApp(MSMBuilderApp):
     name = 'msm'
-    path = 'msmbuilder3.commands.msmapp.MSMApp'
+    path = 'msmbuilder3.command.msmapp.MSMApp'
     short_description = '''Build one or more Markov state models'''
     long_description = ''
     

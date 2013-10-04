@@ -7,7 +7,7 @@ if os.path.exists(os.path.join(os.path.dirname(__file__), 'msmbuilder3')):
 
 from msmbuilder3.config.app import (MSMBuilderApp, RootApplication,
                                     collect_subcommands)
-from msmbuilder3.commands import *
+from msmbuilder3.command import *
 
 
 def main():
