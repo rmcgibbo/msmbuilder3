@@ -13,7 +13,8 @@ class KCenters(BaseModeller, EstimatorMixin):
     n_clusters : int
         The number of clusters to seed
     seed : int, 'random'
-        The index of of the data point to use as the 0th cluster center
+        The index of of the data point to use as the 0th cluster center,
+        between 0 and n_samples-1.
     precision = {'single', 'double'}
 
     Attributes
@@ -62,7 +63,7 @@ class KCenters(BaseModeller, EstimatorMixin):
         if self.seed == 'random':
             new_center = np.random.randint(n_samples)
         else:
-            new_center = seed
+            new_center = self.seed
 
         for i in xrange(self.n_clusters):
             # KCenters main loop

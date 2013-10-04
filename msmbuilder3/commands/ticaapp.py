@@ -2,7 +2,7 @@ import tables
 import numpy as np
 import mdtraj as md
 
-from IPython.utils.traitlets import Unicode, Int, Enum
+from IPython.utils.traitlets import Unicode, Int, Enum, Instance, Bool
 from msmbuilder3.config.app import MSMBuilderApp
 from msmbuilder3.commands.vectorapp import VectorApp
 from msmbuilder3 import tICA
@@ -23,62 +23,71 @@ class TICAApp(MSMBuilderApp):
     `trained_path`, and use it to transform your dataset. Finally, using `fit_transform`, you
     can run both of these steps together, training the model AND using it to project
     down your dataset.''', config=True)
-    source = Enum(['fly', 'precomputed'], default_value='fly', config=True, help='''tICA takes
-    as input a set of multivariate vector timeseries. Using `fly`, these timeseries can be computed
-    on-the-fly from your molecular dynamics trajectories. To controll the settings about how this
-    vectorization is done, you can pass options to the vectorizer using the --Vector.<setting>=option
-    syntax; use --help-all for details. Alertnatively, using `precomputed`, you may pass in
-    timeseries data that has been precalculated.''')
+    source = Enum(['vector', 'precomputed'], default_value='vector', config=True, help='''tICA takes
+    as input a set of multivariate timeseries. Using `vector`, these timeseries can be computed
+    on-the-fly from your molecular dynamics trajectories, by internally building an instance
+    of the `msmb vector` app, whose output is effectively piped (in unix parlance) into this app.
+    To control the settings about how this vectorization is done, you can pass options to the
+    vectorizer using the --VectorApp.<setting>=option syntax; use --help-all for details.
+    Alertnatively, using `precomputed`, you may pass in timeseries data that has been precalculated.''')
     load_from = Unicode('', config=True, help='''Path from which to load pre-trained tICA model.
     This is only used when `mode`==`transform`.''')
     n_components = Int(5, config=True, help='''Number of components to project onto. This option is
     only in effect when `mode`==`transform` or `mode`==`fit_transform`''')
     lag = Int(1, config=True, help='''Lag time to use in calcualting the timelag correlation matrix.
-    The units are in frames. This option is only in effect when `mode`==`fit` or `mode` == 
+    The units are in frames. This option is only in effect when `mode`==`fit` or `mode` ==
     `fit_transform`.''')
     classes = [VectorApp]
 
+    vectorapp = Instance(VectorApp, config=False)
+    def _vectorapp_default(self):
+        return VectorApp(config=self.config)
+    tica = Instance(tICA, help='The compute engine', config=False)
+    is_fit = Bool(False, help='Is the model currently fit?', config=False)
+
     def start(self):
-        if self.mode == 'transform':
-            self.log.info('Loading model from `%s`' % self.load_from)
-            with tables.open_file(self.load_from) as f:
-                tica = tICA.from_pytables(f.root.tICA)
-
-            tica.n_components = self.n_components
-            return self.run_transform(tica)
-
-        else:
-            self.run_fit_or_fit_transform()
-
-    def run_fit_or_fit_transform(self):
-        assert self.mode in ['fit', 'fit_transform']
-        tica = tICA(lag=self.lag, n_components=self.n_components)
-        self.log.info('Fitting model')
-        for data in self.yield_data():
-            tica.fit_update(data)
+        self.fit()
 
         if self.mode == 'fit':
             self.log.info('Saving fit tICA object to `%s`' % self.output)
             with tables.open_file(self.output, 'w') as f:
-                tica.to_pytables(f.root)
+                self.tica.to_pytables(f.root)
             return
-        
-        if self.mode == 'fit_transform':
-            self.run_transform(tica)
 
-    def run_transform(self, tica):
-        self.log.info('Running dimensnionality reduction transform')
-        results = []
-        for data in self.yield_data():
-            results.append(tica.transform(data))
-        print results
+        if self.mode in ['fit_transform', 'transform']:
+            for data in self.yield_transform():
+                print data
+            raise NotImplementedError()
 
-    def yield_data(self):
+
+        else:
+            raise RuntimeError()
+
+    def fit(self):
+        if self.mode == 'transform':
+            # DONT run the fit, just load a prefitted model from disk
+            with tables.open_file(self.load_from) as f:
+                self.tica = tICA.from_pytables(f.root.tICA)
+            self.is_fit = True
+            tica.n_components = self.n_components
+
+        else:
+            self.tica = tICA(lag=self.lag, n_components=self.n_components)
+            self.log.info('* Starting fitting of tICA model...')
+            for data in self.vectorapp.yield_transform():
+                self.tica.fit_update(data)
+            self.is_fit = True
+            self.log.info('= Finished fitting of tICA model')
+
+    def _yield_input(self):
         if self.source == 'fly':
-            v = VectorApp(config=self.config)
-            transform = v.get_vectorizer().transform
-            self.log.info('Loading data with on-the-fly transform into `%s` space' % v.method)
-            for traj in v.yield_trajectories():
-                yield transform(traj)
+            for data in self.vectorapp.yield_transform():
+                yield data
         else:
             raise NotImplementedError()
+
+    def yield_transform(self):
+        self.log.info('*** Starting transformation of data into tIC space...')
+        for data in self._yield_input():
+            yield self.tica.transform(data)
+        self.log.info('=== Finished transformation of data into tIC space')
