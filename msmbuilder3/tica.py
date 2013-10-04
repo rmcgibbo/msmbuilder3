@@ -93,7 +93,7 @@ class tICA(BaseModeller, UpdateableEstimatorMixin, TransformerMixin):
                 self.running_sum_0_ = np.zeros(n_features)
                 self.running_sum_dt_ = np.zeros(n_features)
 
-            elif n_features != self.cov_mat_.shape[0]:
+            elif n_features != len(self.running_sum_0_):
                 raise RuntimeError("data does not match the shape of the internal state.")
 
             self.running_corr_mat_0_0_ += row[:-self.lag].T.dot(row[:-self.lag])

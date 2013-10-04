@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+import os
+import sys
+if os.path.exists(os.path.join(os.path.dirname(__file__), 'msmbuilder3')):
+    # We're running in the source code directory
+    sys.path.insert(0, 'msmbuilder3')
+
+from msmbuilder3.config.app import (MSMBuilderApp, RootApplication,
+                                    collect_subcommands)
+from msmbuilder3.commands import *
+
+
+def main():
+    # register all of the apps as subcommands
+    app = RootApplication.instance()
+    RootApplication.subcommands = collect_subcommands()
+    app.initialize()
+    app.start()
+
+if __name__ == '__main__':
+    main()
