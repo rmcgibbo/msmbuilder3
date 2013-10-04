@@ -68,7 +68,6 @@ class MSMBuilderApp(Application):
         self.aliases['input'] = 'MSMBuilderApp.input'
         self.aliases['output'] = 'MSMBuilderApp.output'
 
-
     def print_description(self):
         "Print the application description"
         lines = ['']
@@ -95,9 +94,11 @@ class MSMBuilderApp(Application):
         # load the config file before parsing argv so that
         # the command line options override the config file options
         super(MSMBuilderApp, self).initialize(argv)
-        #if self.display_banner:
-        #    print('DRAWING MSMBUILDER BANNER')
-        #    print('PLEASE CITE US?')
+        for subconfig in self.config.values():
+            if 'input' in subconfig:
+                self.config['MSMBuilderApp'].input = subconfig.input
+            if 'output' in subconfig:
+                self.config['MSMBuilderApp'].output = subconfig.output
 
     def print_subcommands(self):
         """Print the list of subcommands under this application"""
@@ -169,7 +170,7 @@ class MSMBuilderApp(Application):
 
         if not self.flags and not self.aliases:
             return
-        lines = ['%s Options' % self.__class__.name]
+        lines = ['%s options' % self.__class__.name]
         lines.append('-'*len(lines[0]))
         print(os.linesep.join(lines))
         self.print_flag_help()

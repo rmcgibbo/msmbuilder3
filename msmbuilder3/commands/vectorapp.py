@@ -44,6 +44,8 @@ class VectorApp(MSMBuilderApp):
             for file in os.listdir(self.input):
                 t = md.load(os.path.join(self.input, file))
                 yield self.vectorizer.transform(t)
+        else:
+            raise NotImplementedError()
 
     def _load_indices(self):
         try:
