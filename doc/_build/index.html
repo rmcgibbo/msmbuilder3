@@ -1,0 +1,254 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>MSMBuilder3 &mdash; MSMBuilder3 3.0.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.0.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="MSMBuilder3 3.0.0 documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="#">MSMBuilder3 3.0.0 documentation</a> |</li>
+<a href="getting_started.html">Getting Started</a> |
+<a href="https://github.com/rmcgibbo/mdtraj/issues">Bugs</a> |
+<!-- <a href="examples/index.html">Examples</a> | -->
+ 
+
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="msmbuilder3">
+<h1>MSMBuilder3<a class="headerlink" href="#msmbuilder3" title="Permalink to this headline">¶</a></h1>
+<p>MSMBuilder3 is a substantial re-write of portions of the MSMBuilder codebase,
+with an effort to make a more reusable, modular, flexible, and powerful software package for modeling and understanding long-timescale conformational dynamics in molecular systems using Markov state models and associated technologies.</p>
+<div class="section" id="dataflow-model">
+<h2>Dataflow Model<a class="headerlink" href="#dataflow-model" title="Permalink to this headline">¶</a></h2>
+<p>Much of MSMBuilder3 involves manipulating molecular dynamics trajectories
+by projecting individual conformations from simulation &#8220;data&#8221; from one space
+into another. Clustering projects each frame from <span class="math">\(\mathbb{R}^{3N}\)</span> phase space into the discrete space of clusters, <span class="math">\(\{1, \ldots, K\}\)</span>, where <span class="math">\(N\)</span> is the number of atoms in the system and <span class="math">\(K\)</span> is the number of clusters. Other transformations like extracting the backbone torsion angles from a peptide or tICA transform conformations from one high-dimensional space into a lower dimensional space. Some transformations project data into higher dimensional spaces, like the construction of contact maps.</p>
+<p>Much of the construction of a Markov state model can be expressed as a pipeline: data starts in <span class="math">\(\mathbb{R}^{3N}\)</span>, and may be transformed by a variety of filters in sequence before the final statistical model is constructed. For example, we might first extract dihedral angles, run tICA to identify the slow components, and then cluster using these slow components.</p>
+<p>MSMBuilder3 makes these transformations available to you individually on the command line, and also makes it possible to internally &#8220;pipe&#8221; the data between steps, to construct a single &#8220;pipelined&#8221; estimator without saving intermediate
+results to disk.</p>
+</div>
+<div class="section" id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
+<p>Vectorize a trajectory by extracting backbone dihedral angles</p>
+<div class="highlight-python"><pre>$ msmb vector -h
+
+Transform molecular dynamics trajectories into multidimensional timeseries in a
+suitable vector space
+===============================================================================
+
+vector options
+--------------
+--indices=&lt;Unicode&gt; (VectorApp.indices)
+    Default: 'indices.dat'
+    For method in ['distance', 'angle', 'dihedral'], supply a path to a file
+    containing the indices of the atoms to use for defining the pairs / triplets
+    / quartets of atoms. This file should contain a two-dimensional array of
+    integers.
+--input=&lt;Unicode&gt; (MSMBuilderApp.input)
+    Default: 'input'
+    Input data source (file). Path to one or more timeseries or trajectory
+    files.
+--method=&lt;Enum&gt; (VectorApp.method)
+    Default: 'dihedral'
+    Choices: ['position', 'distance', 'angle', 'dihedral']
+    The method by which we extract a multivariate feature vector representation
+    of each molecular dynamics frame. If method=='position', the trajectories
+    are aligned against a reference structure, and the cartesian coordinates are
+    used. If method=='distance',
+--output=&lt;Unicode&gt; (MSMBuilderApp.output)
+    Default: 'output'
+    Output data source (file). The form of the output depends on the subcommand
+    invoked.
+
+To see all available configurables, use `--help-all`
+
+[VectorApp] Exiting application: vector
+
+$ ls trajectories/
+trj0.h5  trj1.h5
+
+$ cat indices.dat
+0 1 2 3
+1 2 3 4
+2 3 4 5
+3 4 5 6
+
+$ msmb vector --method=dihedral --indices=indices.dat --input=trajectories/ --output=dihedrals.hdf
+[VectorApp] Writing DataSet: dihedrals.hdf
+
+$ msmb info --input=dihedrals.hdf
+Mapped Trajectory Dataset
+=========================
+
+Name: VectorApp-dihedral
+Number of trajectories: 2 (from index 0 to 1)
+
+Provenance
+----------
+0) 2013-10-04 17:35:19 :: rmcgibbo
+  cmdline: msmb vector --method dihedral --indices indices.dat --input trajectories/ --output dihedrals.hdf
+  executable: /Users/rmcgibbo/local/msmbuilder3/msmb
+
+Dimensionality
+--------------
+trj0 contains 501 entries of shape (4,)
+     -&gt; /Users/rmcgibbo/local/msmbuilder3/trj0.h5
+trj1 contains 501 entries of shape (4,)
+     -&gt; /Users/rmcgibbo/local/msmbuilder3/trj1.h5</pre>
+</div>
+<p>Running tICA, we can project this data from a four dimensional space into
+a two dimensional space</p>
+<div class="highlight-python"><pre>$ msmb tICA --source=precomputed --input=dihedrals.hdf --n_components=2
+[TICAApp] * Starting fitting of tICA model...
+[TICAApp] = Finished fitting of tICA model
+[TICAApp] Writing DataSet: output
+[TICAApp] *** Starting transformation of data into tIC space...
+[TICAApp] === Finished transformation of data into tIC space
+
+$ msmb info --input=tics.hdf
+Mapped Trajectory Dataset
+=========================
+
+Name: TICAApp
+Number of trajectories: 2 (from index 0 to 1)
+
+Provenance
+----------
+0) 2013-10-04 17:35:19 :: rmcgibbo
+  cmdline: msmb vector --method dihedral --indices indices.dat --input trajectories/ --output dihedrals.hdf
+  executable: /Users/rmcgibbo/local/msmbuilder3/msmb
+1) 2013-10-04 17:38:51 :: rmcgibbo
+  cmdline: msmb tICA --source precomputed --input dihedrals.hdf --n_components 2 --output tics.hdf
+  executable: /Users/rmcgibbo/local/msmbuilder3/msmb
+
+Dimensionality
+--------------
+trj0 contains 501 entries of shape (2,)
+     -&gt; /Users/rmcgibbo/local/msmbuilder3/trj0.h5
+trj1 contains 501 entries of shape (2,)
+     -&gt; /Users/rmcgibbo/local/msmbuilder3/trj1.h5</pre>
+</div>
+<p>We can also effectively run these two commands simultaneously, such that
+the dihedral angles are computed on-the-fly. This is effectively piping data
+from the <tt class="docutils literal"><span class="pre">vector</span></tt> app into the <tt class="docutils literal"><span class="pre">tICA</span></tt> app.</p>
+<div class="highlight-python"><pre>msmb tICA --input=trajectories/ --source=vector --Vector.method=dihedral --output=tica.hdf
+[TICAApp] * Starting fitting of tICA model...
+[TICAApp] = Finished fitting of tICA model
+[TICAApp] Writing DataSet: tica.hdf
+[TICAApp] *** Starting transformation of data into tIC space...
+[TICAApp] === Finished transformation of data into tIC space</pre>
+</div>
+<div class="section" id="installation">
+<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
+<p>MSMBuilder3 requires a functioning scientific python distribution, including the <tt class="docutils literal"><span class="pre">numpy</span></tt>, <tt class="docutils literal"><span class="pre">scipy</span></tt>, <tt class="docutils literal"><span class="pre">pandas</span></tt>, <tt class="docutils literal"><span class="pre">matplotlib</span></tt>, <tt class="docutils literal"><span class="pre">tables</span></tt> and <tt class="docutils literal"><span class="pre">ipython</span></tt> packages. You&#8217;ll need to install <tt class="docutils literal"><span class="pre">MDTraj</span></tt>, a package for manipulating molecular dynamics trajectories. See <a class="reference external" href="http://www.scipy.org/install.html">Installing the Scipy Stack</a> and <a class="reference external" href="http://mdtraj.s3.amazonaws.com/getting_started.html">Getting Started with MDTraj</a> for details.</p>
+<p>Once you have the dependencies, you can install msmbuilder3 using <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></tt> to add the <tt class="docutils literal"><span class="pre">msmb</span></tt> script to your <tt class="docutils literal"><span class="pre">PATH</span></tt>, or you can run the <tt class="docutils literal"><span class="pre">msmb</span></tt> script directly in the source directory.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<!-- <a href="#"><img src="_static/mdtraj_logo-small.png" alt="Logo"/></a> -->
+
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">MSMBuilder3</a><ul>
+<li><a class="reference internal" href="#dataflow-model">Dataflow Model</a></li>
+<li><a class="reference internal" href="#examples">Examples</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="#">MSMBuilder3 3.0.0 documentation</a> |</li>
+<a href="getting_started.html">Getting Started</a> |
+<a href="https://github.com/rmcgibbo/mdtraj/issues">Bugs</a> |
+<!-- <a href="examples/index.html">Examples</a> | -->
+ 
+
+      </ul>
+    </div>
+
+    <div class="footer">
+        &copy; Copyright 2013, Stanford Univeristy and the authors.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+    </div>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-42143125-1', 'rmcgibbo.github.io');
+  ga('send', 'pageview');
+</script>
+
+  </body>
+</html>

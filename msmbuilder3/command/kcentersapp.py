@@ -12,7 +12,6 @@ from .ticaapp import TICAApp
 from .vectorapp import VectorApp
 
 
-
 class KCentersApp(MSMBuilderApp):
     name = 'kcenters'
     path = 'msmbuilder3.command.kcentersapp.KCentersApp'

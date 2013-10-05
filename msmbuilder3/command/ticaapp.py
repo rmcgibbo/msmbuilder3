@@ -100,7 +100,7 @@ class TICAApp(MSMBuilderApp):
         else:
             dataset = DataSet(self.input)
             for key in dataset.keys():
-                if with_filename:
+                if with_filenames:
                     yield dataset[key], dataset.get_trajfn(key)
                 else:
                     yield dataset[key]
@@ -110,7 +110,7 @@ class TICAApp(MSMBuilderApp):
     def yield_transform(self, with_filenames=False):
         self.log.info('*** Starting transformation of data into tIC space...')
         for row in self._yield_input(with_filenames):
-            if with_filename:
+            if with_filenames:
                 yield self.tica.transform(row[0]), row[1]
             else:
                 yield self.tica.transform(row)
