@@ -9,6 +9,13 @@ class Workflow(BaseModeller):
     transformers whose dependency graph is a directed acyclic
     graph (DAG)
     
+    Parameters
+    ----------
+    base_models : list
+        list of base models to construct the workflow. All but
+        the last model must be an instance of a subclass of
+        TransformerMixin
+
     Examples
     --------
 
@@ -26,16 +33,7 @@ class Workflow(BaseModeller):
     """
 
     def __init__(self, base_models):
-        """
-        construct a workflow with a set of base models
-
-        Parameters
-        ----------
-        base_models : list
-            list of base models to construct the workflow. All but
-            the last model must be an instance of a subclass of
-            TransformerMixin
-        """
+        pass
 
 
     def fit_all(self, X):
@@ -54,7 +52,7 @@ class Workflow(BaseModeller):
         """
 
 
-    def iter_models(self):
+    def models_iter(self):
         """
         iterate over all fit models
         

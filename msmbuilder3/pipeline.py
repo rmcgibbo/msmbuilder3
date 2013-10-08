@@ -44,6 +44,12 @@ class Pipeline(BaseModeller, TransformerMixin, EstimatorMixin):
     the first n - 1 models must use the TransformerMixin as the 
     outputs will be fed as input to the next model.
 
+    Parameters
+    ----------
+    models : list
+        list containing several models. The last can be an Estimator,
+        but all models befor the last must subclass TransformerMixin
+
     Examples
     --------
     >>> a = DistanceVectorizer([[1,2]])
@@ -53,8 +59,8 @@ class Pipeline(BaseModeller, TransformerMixin, EstimatorMixin):
     >>> features = PipelineTransformer([a, b]).transform(X)
     """
 
-    def __init__(self, transformers):
-        self.transformers = transformers
+    def __init__(self, models):
+        self.models = models
 
     def transform(self, X):
         """
