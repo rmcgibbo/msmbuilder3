@@ -1,7 +1,7 @@
 """Classes to build composite transformers"""
 
 import numpy as np
-from base import BaseModeller, TransformerMixin
+from base import BaseModeller, TransformerMixin, EstimatorMixin
 
 
 class MergingTransformer(BaseModeller, TransformerMixin):
@@ -37,11 +37,12 @@ class MergingTransformer(BaseModeller, TransformerMixin):
         return np.hstack([v.transform(X) for v in self.transformers])
 
 
-class PipelineTransformer(BaseModeller, TransformerMixin):
+class Pipeline(BaseModeller, TransformerMixin, EstimatorMixin):
     """
-    Transforms a trajectory or timeseries by applying a pipeline
-    sequence of transformations in order, with the results of one
-    feeding the input to the subsequent transformer.
+    Fits and/or transforms a dataset according to a sequence of
+    models. The last model can be an estimator or transformer, but
+    the first n - 1 models must use the TransformerMixin as the 
+    outputs will be fed as input to the next model.
 
     Examples
     --------
@@ -75,3 +76,60 @@ class PipelineTransformer(BaseModeller, TransformerMixin):
         for t in self.transformers:
             X = t.transform(X)
         return X
+
+
+    def transform_iter(self, X):
+        """
+        Transform an entire dataset one item at a time. 
+
+        Parameters
+        ----------
+        X : Dataset, TrajectorySet, or iterable
+            Dataset to iterate through. This can be a dataset, trajectoryset
+            or any iterable (e.g. the result of transform_iter from another 
+            model.)
+
+        Returns
+        -------
+        transformed_X : iterable
+            iterable over the entire dataset
+        """
+
+
+    def fit(self, X):
+        """
+        Fit the sequence of models to a dataset
+
+        Parameters
+        ----------
+        X : Dataset or TrajectorySet
+            Dataset or TrajectorySet to fit all estimators to. This only makes
+            sense if there are models in the sequence that are estimators.
+
+        Returns
+        -------
+        self
+        """
+
+
+    def fit_transform(self, X):
+        """
+        Fit the sequence of models to a dataset and then transform
+        the results according to the final model
+
+        Parameters
+        ----------
+        X : Dataset or TrajectorySet
+            Dataset or TrajectorySet to fit the estimators to. After fitting
+            all models, X will be transformed.
+
+        Returns
+        -------
+        transformed_X : np.ndarray
+            transformed dataset
+        """
+
+        self.fit(X)
+        return self.transform(X)
+
+
