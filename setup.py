@@ -6,6 +6,7 @@ Description
 DOCLINES = __doc__.split("\n")
 
 import os
+import sys
 try:
     from setuptools import setup
 except ImportError:
@@ -27,6 +28,10 @@ def find_packages():
         packages.append(package)
     return packages
 
+build_doc = 'doc' in sys.argv
+if build_doc:
+    sys.argv.remove('doc')
+
 setup(name='msmbuilder3',
       author_email='rmcgibbo@gmail.com',
       description=DOCLINES[0],
@@ -39,3 +44,7 @@ setup(name='msmbuilder3',
       install_requires=['mdtraj'],
       scripts=['msmb'],
 )
+
+if build_doc:
+    os.chdir(os.path.join(os.path.dirname(__file__), 'doc'))
+    os.system('make html')

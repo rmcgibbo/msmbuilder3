@@ -206,7 +206,7 @@ class DihedralVectorizer(BaseModeller, TransformerMixin):
 
     Parameters
     ----------
-    quartet_indices_indices : numpy_array of shape [n_dihedrals, 4]
+    quartet_indices : numpy_array of shape [n_dihedrals, 4]
         Each row of specifies four indices, p0, p1, p2, p3 of atoms. The
         calculated angle will be between the plane formed by atoms p0, p1,
         and p2 and the plane formed by atoms p1, p2, and p3.
