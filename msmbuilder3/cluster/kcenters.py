@@ -16,6 +16,7 @@ class KCenters(BaseModeller, EstimatorMixin):
         The index of of the data point to use as the 0th cluster center,
         between 0 and n_samples-1.
     precision = {'single', 'double'}
+        Numerical precision in which to perform the calculation.
 
     Attributes
     ----------
@@ -77,7 +78,7 @@ class KCenters(BaseModeller, EstimatorMixin):
 
         return self
 
-    def fit_predict(self, X):
+    def fit_transform(self, X):
         """
         Run KCenters clustering on the dataset X
 
@@ -95,7 +96,7 @@ class KCenters(BaseModeller, EstimatorMixin):
         self.fit(X)
         return self.labels_
 
-    def predict(self, X):
+    def transform(self, X):
         """
         Predict the cluster labels of new data points
 
@@ -111,7 +112,7 @@ class KCenters(BaseModeller, EstimatorMixin):
             These indices range from 0 to n_cluster-1.
         """
         if not hasattr(self, 'centers_'):
-            raise RuntimeError('The model must be fit before predict() can be run')
+            raise RuntimeError('The model must be fit before transform() can be run')
         dtype = {'single': np.float32, 'double': np.float64}[self.precision]
         X = md.utils.ensure_type(X, dtype, ndim=2, name='X', warn_on_cast=False)
         d = scipy.spatial.distance.cdist(X, self.centers_, metric=self.metric)

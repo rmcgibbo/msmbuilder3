@@ -1,7 +1,7 @@
 """Classes to build composite transformers"""
 
 import numpy as np
-from base import BaseModeller, TransformerMixin, EstimatorMixin
+from ..base import BaseModeller, TransformerMixin, EstimatorMixin
 
 
 class MergingTransformer(BaseModeller, TransformerMixin):

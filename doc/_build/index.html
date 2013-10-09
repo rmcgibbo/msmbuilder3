@@ -1,3 +1,4 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -13,7 +14,7 @@
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
+        URL_ROOT:    '',
         VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
@@ -24,7 +25,8 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="MSMBuilder3 3.0.0 documentation" href="#" /> 
+    <link rel="top" title="MSMBuilder3 3.0.0 documentation" href="#" />
+    <link rel="next" title="Installation" href="installation.html" /> 
   </head>
   <body>
     <div class="related">
@@ -33,6 +35,9 @@
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             accesskey="N">next</a> |</li>
         <li><a href="#">MSMBuilder3 3.0.0 documentation</a> |</li>
 <a href="getting_started.html">Getting Started</a> |
 <a href="https://github.com/rmcgibbo/mdtraj/issues">Bugs</a> |
@@ -51,130 +56,160 @@
 <h1>MSMBuilder3<a class="headerlink" href="#msmbuilder3" title="Permalink to this headline">¶</a></h1>
 <p>MSMBuilder3 is a substantial re-write of portions of the MSMBuilder codebase,
 with an effort to make a more reusable, modular, flexible, and powerful software package for modeling and understanding long-timescale conformational dynamics in molecular systems using Markov state models and associated technologies.</p>
-<div class="section" id="dataflow-model">
-<h2>Dataflow Model<a class="headerlink" href="#dataflow-model" title="Permalink to this headline">¶</a></h2>
-<p>Much of MSMBuilder3 involves manipulating molecular dynamics trajectories
-by projecting individual conformations from simulation &#8220;data&#8221; from one space
-into another. Clustering projects each frame from <span class="math">\(\mathbb{R}^{3N}\)</span> phase space into the discrete space of clusters, <span class="math">\(\{1, \ldots, K\}\)</span>, where <span class="math">\(N\)</span> is the number of atoms in the system and <span class="math">\(K\)</span> is the number of clusters. Other transformations like extracting the backbone torsion angles from a peptide or tICA transform conformations from one high-dimensional space into a lower dimensional space. Some transformations project data into higher dimensional spaces, like the construction of contact maps.</p>
-<p>Much of the construction of a Markov state model can be expressed as a pipeline: data starts in <span class="math">\(\mathbb{R}^{3N}\)</span>, and may be transformed by a variety of filters in sequence before the final statistical model is constructed. For example, we might first extract dihedral angles, run tICA to identify the slow components, and then cluster using these slow components.</p>
-<p>MSMBuilder3 makes these transformations available to you individually on the command line, and also makes it possible to internally &#8220;pipe&#8221; the data between steps, to construct a single &#8220;pipelined&#8221; estimator without saving intermediate
-results to disk.</p>
+<div class="section" id="a-more-unified-and-powerful-api">
+<h2>A More Unified and Powerful API<a class="headerlink" href="#a-more-unified-and-powerful-api" title="Permalink to this headline">¶</a></h2>
+<p>The MSMBuilder3 API follows closely to the pattern used by <a class="reference external" href="http://scikit-learn.org/stable/">scikit-learn</a>, the highly-successful machine learning library in python. It is focused around a uniform API for statistical models. We&#8217;ve also been inspired by the <a class="reference external" href="https://github.com/SimTk/openmm/">OpenMM</a> python API. By providing a clean, functional and <cite>high-level</cite> python API, we believe we put more power in the hands of users than we do with complex scripts that require effectively turing-complete input files. If you&#8217;re going to be writing complex input files or bash scripts that string together MSMBuilder calls, why not write them in a real programming language like python?</p>
+<div class="section" id="api-documentation">
+<h3>API Documentation<a class="headerlink" href="#api-documentation" title="Permalink to this headline">¶</a></h3>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="vectorizer.html">Vectorizers</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="vectorizer.html#distancevectorizer">DistanceVectorizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vectorizer.html#anglevectorizer">AngleVectorizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vectorizer.html#dihedralvectorizer">DihedralVectorizer</a></li>
+<li class="toctree-l2"><a class="reference internal" href="vectorizer.html#positionvectorizer">PositionVectorizer</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reduction.html">Dimensionality Reduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="reduction.html#tica">tICA</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reduction.html#pca">PCA</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cluster.html">Clustering</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="cluster.html#kcenters">KCenters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="flow.html">Working with multiple models</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="flow.html#pipeline">Pipeline</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flow.html#branch">Branch</a></li>
+<li class="toctree-l2"><a class="reference internal" href="flow.html#workflow">Workflow</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="io.html">Data Storage and IO</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="io.html#mdtraj"><tt class="docutils literal"><span class="pre">mdtraj</span></tt></a></li>
+<li class="toctree-l2"><a class="reference internal" href="io.html#vectorset"><tt class="docutils literal"><span class="pre">VectorSet</span></tt></a></li>
+</ul>
+</li>
+</ul>
 </div>
-<div class="section" id="examples">
-<h2>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h2>
-<p>Vectorize a trajectory by extracting backbone dihedral angles</p>
-<div class="highlight-python"><pre>$ msmb vector -h
+</div>
+<div class="section" id="transformers">
+<h3>Transformers<a class="headerlink" href="#transformers" title="Permalink to this headline">¶</a></h3>
+<p>Many of these models implement the  <tt class="docutils literal"><span class="pre">Transformer</span></tt> API. That is, they are capable of transforming data from one representation into another. Examples of this behavior include classes for extracting distances, angles, and torsions from molecular dynamics trajectories (<tt class="docutils literal"><span class="pre">DistanceVectorizer</span></tt>, <tt class="docutils literal"><span class="pre">AngleVectorizer</span></tt>, <tt class="docutils literal"><span class="pre">DihedralVectorizer</span></tt>), classes for performing dimensionality reduction such as principle components analysis and time-structure independent components analysis (<tt class="docutils literal"><span class="pre">PCA</span></tt> and <tt class="docutils literal"><span class="pre">tICA</span></tt>), and even clustering, which  transforms a dataset from some vector space into a discrete space.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">msmbuilder3</span> <span class="kn">import</span> <span class="n">DihedralVectorizer</span>
+<span class="kn">from</span> <span class="nn">mdtraj</span> <span class="kn">import</span> <span class="n">load</span>
 
-Transform molecular dynamics trajectories into multidimensional timeseries in a
-suitable vector space
+<span class="n">d</span> <span class="o">=</span> <span class="n">DihedralVectorizer</span><span class="p">(</span><span class="n">indices</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]])</span>
+<span class="n">torsions</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">load</span><span class="p">(</span><span class="s">&#39;trajectory.dcd&#39;</span><span class="p">,</span> <span class="s">&#39;topology.pdb&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="automating-complex-workflows">
+<h3>Automating Complex Workflows<a class="headerlink" href="#automating-complex-workflows" title="Permalink to this headline">¶</a></h3>
+<p>MSM workflows typically involve building more than a single Markov state models. Generally, one wishes to explore a parameter space: we might try using many different state decompositions, dimensionality reductions, or distance metrics.</p>
+<p>The construction of a single MSM can be expressed as a <tt class="docutils literal"><span class="pre">Pipeline</span></tt>, a sequence of <tt class="docutils literal"><span class="pre">Transforms</span></tt> and statistical models that process data sequentially. For example, trajectories might first be transformed into dihedral space, and then clustered (transformed into a discrete space), before being used to parametrize a Markov state model.</p>
+<p>When building multiple models, the set of computations is now a tree, with the trajectory data at the root at the final MSMs as leaves. Branch points in the tree correspond to steps at which we wish to &#8220;fan out&#8221;, trying <span class="math">\(N\)</span> different parameter sets for the next level of the computation: we might for example build a tree of models where we try 3 different <tt class="docutils literal"><span class="pre">tICA</span></tt> settings, 4 possible numbers of states during clustering, and 10 different lag times, creating in the end <span class="math">\(3 \times 4\times 10 = 120\)</span> Markov state models.</p>
+<p>MSMBuilder3 aims to make this common use case easy to express and efficient to calculate. Since much of the work in building these models is shared (it&#8217;s only necessary to run the <tt class="docutils literal"><span class="pre">tICA</span></tt> transformation three times and the clustering 12 times) and much of the work can be performed in parallel, MSMBuilder3 provides an MPI-aware <tt class="docutils literal"><span class="pre">Workflow</span></tt> class that can efficiently build these model sets, exploiting the data dependencies and opportunities for parallelism.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># buildmodels.py</span>
+<span class="kn">from</span> <span class="nn">msmbuilder</span> <span class="kn">import</span> <span class="n">DihedralVectorizer</span>
+<span class="kn">from</span> <span class="nn">msmbuilder.cluster</span> <span class="kn">import</span> <span class="n">KCenters</span>
+<span class="kn">from</span> <span class="nn">msmbuilder</span> <span class="kn">import</span> <span class="n">MarkovModel</span>
+<span class="kn">from</span> <span class="nn">msmbuilder.flow</span> <span class="kn">import</span> <span class="n">Workflow</span><span class="p">,</span> <span class="n">Branch</span>
+
+<span class="c"># Build a Workflow over multiple different clustering and MSM parmaeters</span>
+<span class="n">wf</span> <span class="o">=</span> <span class="n">Workflow</span><span class="p">([</span>
+         <span class="n">DihedralVectorizer</span><span class="p">(</span><span class="n">indices</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">]]),</span>
+         <span class="n">Branch</span><span class="p">(</span><span class="n">KCenters</span><span class="p">,</span>    <span class="n">param_grid</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;n_clusters&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">300</span><span class="p">]}),</span>
+         <span class="n">Branch</span><span class="p">(</span><span class="n">MarkovModel</span><span class="p">,</span> <span class="n">param_grid</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;lag_time&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">]})</span>
+<span class="p">])</span>
+
+<span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">wf</span><span class="o">.</span><span class="n">iter_models</span><span class="p">():</span>
+    <span class="c"># these models may be fit in parallel using MPI</span>
+    <span class="k">print</span> <span class="n">model</span><span class="o">.</span><span class="n">get_params</span><span class="p">()</span>
+    <span class="k">print</span> <span class="n">model</span><span class="o">.</span><span class="n">timescales_</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>$ mpirun -np 8 python buildmodels.py
+{'DihedralVectorizer.indices': [[0,1,2,3], [1,2,3,4]], 'KCenters.n_clusters': 100, 'MarkovModel.lag_time': 2}
+array([ 8.37906603,  4.09490474,  2.38560312])
+{DihedralVectorizer.indices': [[0,1,2,3], [1,2,3,4]], 'KCenters.n_clusters': 100, 'MarkovModel.lag_time': 3}
+array([ 8.35428476,  4.13811012,  2.45454261])
+{DihedralVectorizer.indices': [[0,1,2,3], [1,2,3,4]], 'KCenters.n_clusters': 100, 'MarkovModel.lag_time': 4}
+array([ 8.33006856,  4.12403202,  2.43270423])
+{DihedralVectorizer.indices': [[0,1,2,3], [1,2,3,4]], 'KCenters.n_clusters': 200, 'MarkovModel.lag_time': 2}
+array([ 8.413737  ,  4.12926038,  2.46474582])
+{DihedralVectorizer.indices': [[0,1,2,3], [1,2,3,4]], 'KCenters.n_clusters': 200, 'MarkovModel.lag_time': 3}
+array([ 8.33165184,  4.13932783,  2.44134274])
+...</pre>
+</div>
+</div>
+</div>
+<div class="section" id="a-single-command-line-executable">
+<h2>A Single Command Line Executable<a class="headerlink" href="#a-single-command-line-executable" title="Permalink to this headline">¶</a></h2>
+<p>Each of the statistical models and transformers and transformers is accessible on the command line as a
+subcommand of a single unified <tt class="docutils literal"><span class="pre">msmb</span></tt> command. This way you can see all of the available MSMBuilder
+commands in one place.</p>
+<p>In general, the approach taken by the apps is to present a 1-1 representation of the MSMBuilder statistical
+models and transformers on the command line. The compound estimators like <tt class="docutils literal"><span class="pre">Pipeline</span></tt>, <tt class="docutils literal"><span class="pre">Branch</span></tt> and
+<tt class="docutils literal"><span class="pre">Workflow</span></tt> are not available on the command line.</p>
+<div class="section" id="the-help-text">
+<h3>The Help Text<a class="headerlink" href="#the-help-text" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><pre>$ msmb -h
+
+MSMBuilder: Software for building Markov State Models for Biomolecular Dynamics
 ===============================================================================
 
-vector options
---------------
---indices=&lt;Unicode&gt; (VectorApp.indices)
-    Default: 'indices.dat'
-    For method in ['distance', 'angle', 'dihedral'], supply a path to a file
-    containing the indices of the atoms to use for defining the pairs / triplets
-    / quartets of atoms. This file should contain a two-dimensional array of
-    integers.
---input=&lt;Unicode&gt; (MSMBuilderApp.input)
-    Default: 'input'
-    Input data source (file). Path to one or more timeseries or trajectory
-    files.
---method=&lt;Enum&gt; (VectorApp.method)
-    Default: 'dihedral'
-    Choices: ['position', 'distance', 'angle', 'dihedral']
-    The method by which we extract a multivariate feature vector representation
-    of each molecular dynamics frame. If method=='position', the trajectories
-    are aligned against a reference structure, and the cartesian coordinates are
-    used. If method=='distance',
---output=&lt;Unicode&gt; (MSMBuilderApp.output)
-    Default: 'output'
-    Output data source (file). The form of the output depends on the subcommand
-    invoked.
+Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi sed nibh ut orci
+suscipit scelerisque. Sed ligula augue, blandit ac eleifend eleifend, dapibus ac
 
-To see all available configurables, use `--help-all`
-
-[VectorApp] Exiting application: vector
-
-$ ls trajectories/
-trj0.h5  trj1.h5
-
-$ cat indices.dat
-0 1 2 3
-1 2 3 4
-2 3 4 5
-3 4 5 6
-
-$ msmb vector --method=dihedral --indices=indices.dat --input=trajectories/ --output=dihedrals.hdf
-[VectorApp] Writing DataSet: dihedrals.hdf
-
-$ msmb info --input=dihedrals.hdf
-Mapped Trajectory Dataset
-=========================
-
-Name: VectorApp-dihedral
-Number of trajectories: 2 (from index 0 to 1)
-
-Provenance
-----------
-0) 2013-10-04 17:35:19 :: rmcgibbo
-  cmdline: msmb vector --method dihedral --indices indices.dat --input trajectories/ --output dihedrals.hdf
-  executable: /Users/rmcgibbo/local/msmbuilder3/msmb
-
-Dimensionality
---------------
-trj0 contains 501 entries of shape (4,)
-     -&gt; /Users/rmcgibbo/local/msmbuilder3/trj0.h5
-trj1 contains 501 entries of shape (4,)
-     -&gt; /Users/rmcgibbo/local/msmbuilder3/trj1.h5</pre>
+Subcommands
+-----------
+tICA
+    Time-structure independent components analysis
+vector
+    Transform molecular dynamics trajectories into multidimensional
+    timeseries in a suitable vector space
+kcenters
+    K-centers clustering of multivariate timeseries
+kmeans
+    K-means clustering of multivariate timeseries
+markovmodel
+    Parameterize a Markov state model from labeled timeseries</pre>
 </div>
-<p>Running tICA, we can project this data from a four dimensional space into
-a two dimensional space</p>
-<div class="highlight-python"><pre>$ msmb tICA --source=precomputed --input=dihedrals.hdf --n_components=2
-[TICAApp] * Starting fitting of tICA model...
-[TICAApp] = Finished fitting of tICA model
-[TICAApp] Writing DataSet: output
-[TICAApp] *** Starting transformation of data into tIC space...
-[TICAApp] === Finished transformation of data into tIC space
-
-$ msmb info --input=tics.hdf
-Mapped Trajectory Dataset
-=========================
-
-Name: TICAApp
-Number of trajectories: 2 (from index 0 to 1)
-
-Provenance
-----------
-0) 2013-10-04 17:35:19 :: rmcgibbo
-  cmdline: msmb vector --method dihedral --indices indices.dat --input trajectories/ --output dihedrals.hdf
-  executable: /Users/rmcgibbo/local/msmbuilder3/msmb
-1) 2013-10-04 17:38:51 :: rmcgibbo
-  cmdline: msmb tICA --source precomputed --input dihedrals.hdf --n_components 2 --output tics.hdf
-  executable: /Users/rmcgibbo/local/msmbuilder3/msmb
-
-Dimensionality
---------------
-trj0 contains 501 entries of shape (2,)
-     -&gt; /Users/rmcgibbo/local/msmbuilder3/trj0.h5
-trj1 contains 501 entries of shape (2,)
-     -&gt; /Users/rmcgibbo/local/msmbuilder3/trj1.h5</pre>
 </div>
-<p>We can also effectively run these two commands simultaneously, such that
-the dihedral angles are computed on-the-fly. This is effectively piping data
-from the <tt class="docutils literal"><span class="pre">vector</span></tt> app into the <tt class="docutils literal"><span class="pre">tICA</span></tt> app.</p>
-<div class="highlight-python"><pre>msmb tICA --input=trajectories/ --source=vector --Vector.method=dihedral --output=tica.hdf
-[TICAApp] * Starting fitting of tICA model...
-[TICAApp] = Finished fitting of tICA model
-[TICAApp] Writing DataSet: tica.hdf
-[TICAApp] *** Starting transformation of data into tIC space...
-[TICAApp] === Finished transformation of data into tIC space</pre>
+<div class="section" id="the-tica-app">
+<h3>The tICA App<a class="headerlink" href="#the-tica-app" title="Permalink to this headline">¶</a></h3>
+<p>Here&#8217;s the interface supplied by, for example, the tICA application.</p>
+<div class="highlight-python"><pre>$ msmb tICA -h
+
+Time-structure Independent Components Analysis
+==============================================
+
+Command line application for the tICA method.
+
+Reference
+---------
+Schwantes, CR and Pande, VS. JCTC, 2013, 9 (4), pp 2000-09
+
+tICA Options
+------------
+--lag_time=&lt;Int&gt; (TICAApp.lag_time)
+    Default: 1
+    Lag time to use in calcualting the timelag correlation matrix. The units are
+    in frames.
+--n_components=&lt;Int&gt; (TICApp.n_components)
+    Default: 5
+    Number of components to project onto. Input timeseries are projected into the
+    space spaned by the first `n_components` linearly uncorrelated components.
+
+General Options
+---------------
+--input=&lt;String&gt; (MSMBuilderApp.input)
+   Path to a VectorSet from which to load input data
+--output=&lt;String&gt; (MSMBuilderApp.output)
+   Path to a VectorSet in which to save output data</pre>
 </div>
-<div class="section" id="installation">
-<h3>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h3>
-<p>MSMBuilder3 requires a functioning scientific python distribution, including the <tt class="docutils literal"><span class="pre">numpy</span></tt>, <tt class="docutils literal"><span class="pre">scipy</span></tt>, <tt class="docutils literal"><span class="pre">pandas</span></tt>, <tt class="docutils literal"><span class="pre">matplotlib</span></tt>, <tt class="docutils literal"><span class="pre">tables</span></tt> and <tt class="docutils literal"><span class="pre">ipython</span></tt> packages. You&#8217;ll need to install <tt class="docutils literal"><span class="pre">MDTraj</span></tt>, a package for manipulating molecular dynamics trajectories. See <a class="reference external" href="http://www.scipy.org/install.html">Installing the Scipy Stack</a> and <a class="reference external" href="http://mdtraj.s3.amazonaws.com/getting_started.html">Getting Started with MDTraj</a> for details.</p>
-<p>Once you have the dependencies, you can install msmbuilder3 using <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">install</span></tt> to add the <tt class="docutils literal"><span class="pre">msmb</span></tt> script to your <tt class="docutils literal"><span class="pre">PATH</span></tt>, or you can run the <tt class="docutils literal"><span class="pre">msmb</span></tt> script directly in the source directory.</p>
 </div>
 </div>
 </div>
@@ -190,9 +225,17 @@ from the <tt class="docutils literal"><span class="pre">vector</span></tt> app i
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">MSMBuilder3</a><ul>
-<li><a class="reference internal" href="#dataflow-model">Dataflow Model</a></li>
-<li><a class="reference internal" href="#examples">Examples</a><ul>
-<li><a class="reference internal" href="#installation">Installation</a></li>
+<li><a class="reference internal" href="#a-more-unified-and-powerful-api">A More Unified and Powerful API</a><ul>
+<li><a class="reference internal" href="#api-documentation">API Documentation</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#transformers">Transformers</a></li>
+<li><a class="reference internal" href="#automating-complex-workflows">Automating Complex Workflows</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#a-single-command-line-executable">A Single Command Line Executable</a><ul>
+<li><a class="reference internal" href="#the-help-text">The Help Text</a></li>
+<li><a class="reference internal" href="#the-tica-app">The tICA App</a></li>
 </ul>
 </li>
 </ul>
@@ -227,6 +270,9 @@ from the <tt class="docutils literal"><span class="pre">vector</span></tt> app i
         <li class="right" style="margin-right: 10px">
           <a href="genindex.html" title="General Index"
              >index</a></li>
+        <li class="right" >
+          <a href="installation.html" title="Installation"
+             >next</a> |</li>
         <li><a href="#">MSMBuilder3 3.0.0 documentation</a> |</li>
 <a href="getting_started.html">Getting Started</a> |
 <a href="https://github.com/rmcgibbo/mdtraj/issues">Bugs</a> |
@@ -238,7 +284,7 @@ from the <tt class="docutils literal"><span class="pre">vector</span></tt> app i
 
     <div class="footer">
         &copy; Copyright 2013, Stanford Univeristy and the authors.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2b1.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
     </div>
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){

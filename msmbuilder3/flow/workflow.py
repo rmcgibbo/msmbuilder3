@@ -1,7 +1,7 @@
 """Classes to build complex composite models"""
 
 import numpy as np
-from base import BaseModeller, TransformerMixin, EstimatorMixin
+from ..base import BaseModeller, TransformerMixin, EstimatorMixin
 
 class Workflow(BaseModeller):
     """
@@ -25,6 +25,7 @@ class Workflow(BaseModeller):
     >>> clusters = Fan(KCenters, param_set=[{'num_states' : np.arange(1000, 10000, 1000)}])
     >>> msms = Fan(MSM, param_set=[{'lag_time' : np.arange(10, 100, 10), 'symmetrize' : ['mle'] }])
     >>> models = Workflow([dih, ticas, clusters, msms, models])
+    >>>
     >>> models.fit_all(X)
     >>> for i, m in enumerate(models.iter_models()):
     ...     m.save('model%d.h5' % i)
@@ -38,7 +39,7 @@ class Workflow(BaseModeller):
 
     def fit_all(self, X):
         """
-        fit all models with some data, X
+        Fit all models on a data set X
 
         Parameters
         ----------
@@ -50,15 +51,15 @@ class Workflow(BaseModeller):
         -------
         self
         """
-
+        pass
 
     def models_iter(self):
         """
-        iterate over all fit models
+        Iterate over all fit models
         
         Returns
         -------
         models_iter : iterable
             iterable containing all leaf models of the workflow
         """
-
+        pass

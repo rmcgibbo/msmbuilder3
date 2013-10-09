@@ -4,139 +4,148 @@ MSMBuilder3
 MSMBuilder3 is a substantial re-write of portions of the MSMBuilder codebase,
 with an effort to make a more reusable, modular, flexible, and powerful software package for modeling and understanding long-timescale conformational dynamics in molecular systems using Markov state models and associated technologies.
 
+A More Unified and Powerful API
+===============================
 
-Dataflow Model
-==============
+The MSMBuilder3 API follows closely to the pattern used by `scikit-learn <http://scikit-learn.org/stable/>`_, the highly-successful machine learning library in python. It is focused around a uniform API for statistical models. We've also been inspired by the `OpenMM <https://github.com/SimTk/openmm/>`_ python API. By providing a clean, functional and `high-level` python API, we believe we put more power in the hands of users than we do with complex scripts that require effectively turing-complete input files. If you're going to be writing complex input files or bash scripts that string together MSMBuilder calls, why not write them in a real programming language like python?
 
-Much of MSMBuilder3 involves manipulating molecular dynamics trajectories
-by projecting individual conformations from simulation "data" from one space
-into another. Clustering projects each frame from :math:`\mathbb{R}^{3N}` phase space into the discrete space of clusters, :math:`\{1, \ldots, K\}`, where :math:`N` is the number of atoms in the system and :math:`K` is the number of clusters. Other transformations like extracting the backbone torsion angles from a peptide or tICA transform conformations from one high-dimensional space into a lower dimensional space. Some transformations project data into higher dimensional spaces, like the construction of contact maps.
+API Documentation
+-----------------
 
-Much of the construction of a Markov state model can be expressed as a pipeline: data starts in :math:`\mathbb{R}^{3N}`, and may be transformed by a variety of filters in sequence before the final statistical model is constructed. For example, we might first extract dihedral angles, run tICA to identify the slow components, and then cluster using these slow components.
+.. toctree::
+   :maxdepth: 3
+   
+   installation
+   vectorizer
+   reduction
+   cluster
+   flow
+   io
 
-MSMBuilder3 makes these transformations available to you individually on the command line, and also makes it possible to internally "pipe" the data between steps, to construct a single "pipelined" estimator without saving intermediate
-results to disk.
+Transformers
+------------
+Many of these models implement the  ``Transformer`` API. That is, they are capable of transforming data from one representation into another. Examples of this behavior include classes for extracting distances, angles, and torsions from molecular dynamics trajectories (``DistanceVectorizer``, ``AngleVectorizer``, ``DihedralVectorizer``), classes for performing dimensionality reduction such as principle components analysis and time-structure independent components analysis (``PCA`` and ``tICA``), and even clustering, which  transforms a dataset from some vector space into a discrete space.::
 
-Examples
-========
+  from msmbuilder3 import DihedralVectorizer
+  from mdtraj import load
 
-Vectorize a trajectory by extracting backbone dihedral angles ::
+  d = DihedralVectorizer(indices=[[0,1,2,3], [1,2,3,4]])
+  torsions = d.transform(load('trajectory.dcd', 'topology.pdb'))
 
-  $ msmb vector -h
+Automating Complex Workflows
+----------------------------
+MSM workflows typically involve building more than a single Markov state models. Generally, one wishes to explore a parameter space: we might try using many different state decompositions, dimensionality reductions, or distance metrics.
 
-  Transform molecular dynamics trajectories into multidimensional timeseries in a
-  suitable vector space
-  ===============================================================================
+The construction of a single MSM can be expressed as a ``Pipeline``, a sequence of ``Transforms`` and statistical models that process data sequentially. For example, trajectories might first be transformed into dihedral space, and then clustered (transformed into a discrete space), before being used to parametrize a Markov state model.
 
-  vector options
-  --------------
-  --indices=<Unicode> (VectorApp.indices)
-      Default: 'indices.dat'
-      For method in ['distance', 'angle', 'dihedral'], supply a path to a file
-      containing the indices of the atoms to use for defining the pairs / triplets
-      / quartets of atoms. This file should contain a two-dimensional array of
-      integers.
-  --input=<Unicode> (MSMBuilderApp.input)
-      Default: 'input'
-      Input data source (file). Path to one or more timeseries or trajectory
-      files.
-  --method=<Enum> (VectorApp.method)
-      Default: 'dihedral'
-      Choices: ['position', 'distance', 'angle', 'dihedral']
-      The method by which we extract a multivariate feature vector representation
-      of each molecular dynamics frame. If method=='position', the trajectories
-      are aligned against a reference structure, and the cartesian coordinates are
-      used. If method=='distance',
-  --output=<Unicode> (MSMBuilderApp.output)
-      Default: 'output'
-      Output data source (file). The form of the output depends on the subcommand
-      invoked.
+When building multiple models, the set of computations is now a tree, with the trajectory data at the root at the final MSMs as leaves. Branch points in the tree correspond to steps at which we wish to "fan out", trying :math:`N` different parameter sets for the next level of the computation: we might for example build a tree of models where we try 3 different ``tICA`` settings, 4 possible numbers of states during clustering, and 10 different lag times, creating in the end :math:`3 \times 4\times 10 = 120` Markov state models.
 
-  To see all available configurables, use `--help-all`
+MSMBuilder3 aims to make this common use case easy to express and efficient to calculate. Since much of the work in building these models is shared (it's only necessary to run the ``tICA`` transformation three times and the clustering 12 times) and much of the work can be performed in parallel, MSMBuilder3 provides an MPI-aware ``Workflow`` class that can efficiently build these model sets, exploiting the data dependencies and opportunities for parallelism.::
 
-  [VectorApp] Exiting application: vector
+  # buildmodels.py
+  from msmbuilder import DihedralVectorizer
+  from msmbuilder.cluster import KCenters
+  from msmbuilder import MarkovModel
+  from msmbuilder.flow import Workflow, Branch
 
-  $ ls trajectories/
-  trj0.h5  trj1.h5
-  
-  $ cat indices.dat
-  0 1 2 3
-  1 2 3 4
-  2 3 4 5
-  3 4 5 6
-  
-  $ msmb vector --method=dihedral --indices=indices.dat --input=trajectories/ --output=dihedrals.hdf
-  [VectorApp] Writing DataSet: dihedrals.hdf
-  
-  $ msmb info --input=dihedrals.hdf
-  Mapped Trajectory Dataset
-  =========================
+  # Build a Workflow over multiple different clustering and MSM parmaeters
+  wf = Workflow([
+           DihedralVectorizer(indices=[[0,1,2,3], [1,2,3,4]]), 
+           Branch(KCenters,    param_grid={'n_clusters': [100, 200, 300]}),
+	   Branch(MarkovModel, param_grid={'lag_time': [2, 3, 4]})
+  ])
 
-  Name: VectorApp-dihedral
-  Number of trajectories: 2 (from index 0 to 1)
+  for model in wf.iter_models():
+      # these models may be fit in parallel using MPI
+      print model.get_params()
+      print model.timescales_[:3]
 
-  Provenance
-  ----------
-  0) 2013-10-04 17:35:19 :: rmcgibbo
-    cmdline: msmb vector --method dihedral --indices indices.dat --input trajectories/ --output dihedrals.hdf
-    executable: /Users/rmcgibbo/local/msmbuilder3/msmb
+::
 
-  Dimensionality
-  --------------
-  trj0 contains 501 entries of shape (4,)
-       -> /Users/rmcgibbo/local/msmbuilder3/trj0.h5
-  trj1 contains 501 entries of shape (4,)
-       -> /Users/rmcgibbo/local/msmbuilder3/trj1.h5
-
-Running tICA, we can project this data from a four dimensional space into
-a two dimensional space ::
-
-  $ msmb tICA --source=precomputed --input=dihedrals.hdf --n_components=2
-  [TICAApp] * Starting fitting of tICA model...
-  [TICAApp] = Finished fitting of tICA model
-  [TICAApp] Writing DataSet: output
-  [TICAApp] *** Starting transformation of data into tIC space...
-  [TICAApp] === Finished transformation of data into tIC space
-
-  $ msmb info --input=tics.hdf
-  Mapped Trajectory Dataset
-  =========================
-
-  Name: TICAApp
-  Number of trajectories: 2 (from index 0 to 1)
-
-  Provenance
-  ----------
-  0) 2013-10-04 17:35:19 :: rmcgibbo
-    cmdline: msmb vector --method dihedral --indices indices.dat --input trajectories/ --output dihedrals.hdf
-    executable: /Users/rmcgibbo/local/msmbuilder3/msmb
-  1) 2013-10-04 17:38:51 :: rmcgibbo
-    cmdline: msmb tICA --source precomputed --input dihedrals.hdf --n_components 2 --output tics.hdf
-    executable: /Users/rmcgibbo/local/msmbuilder3/msmb
-
-  Dimensionality
-  --------------
-  trj0 contains 501 entries of shape (2,)
-       -> /Users/rmcgibbo/local/msmbuilder3/trj0.h5
-  trj1 contains 501 entries of shape (2,)
-       -> /Users/rmcgibbo/local/msmbuilder3/trj1.h5
-
-We can also effectively run these two commands simultaneously, such that
-the dihedral angles are computed on-the-fly. This is effectively piping data
-from the ``vector`` app into the ``tICA`` app. ::
-
-  msmb tICA --input=trajectories/ --source=vector --Vector.method=dihedral --output=tica.hdf
-  [TICAApp] * Starting fitting of tICA model...
-  [TICAApp] = Finished fitting of tICA model
-  [TICAApp] Writing DataSet: tica.hdf
-  [TICAApp] *** Starting transformation of data into tIC space...
-  [TICAApp] === Finished transformation of data into tIC space
+  $ mpirun -np 8 python buildmodels.py
+  {'DihedralVectorizer.indices': [[0,1,2,3], [1,2,3,4]], 'KCenters.n_clusters': 100, 'MarkovModel.lag_time': 2}
+  array([ 8.37906603,  4.09490474,  2.38560312])
+  {DihedralVectorizer.indices': [[0,1,2,3], [1,2,3,4]], 'KCenters.n_clusters': 100, 'MarkovModel.lag_time': 3}
+  array([ 8.35428476,  4.13811012,  2.45454261])
+  {DihedralVectorizer.indices': [[0,1,2,3], [1,2,3,4]], 'KCenters.n_clusters': 100, 'MarkovModel.lag_time': 4}
+  array([ 8.33006856,  4.12403202,  2.43270423])
+  {DihedralVectorizer.indices': [[0,1,2,3], [1,2,3,4]], 'KCenters.n_clusters': 200, 'MarkovModel.lag_time': 2}
+  array([ 8.413737  ,  4.12926038,  2.46474582])
+  {DihedralVectorizer.indices': [[0,1,2,3], [1,2,3,4]], 'KCenters.n_clusters': 200, 'MarkovModel.lag_time': 3}
+  array([ 8.33165184,  4.13932783,  2.44134274])
+  ...
 
 
-Installation
+A Single Command Line Executable
+================================
+
+Each of the statistical models and transformers and transformers is accessible on the command line as a
+subcommand of a single unified ``msmb`` command. This way you can see all of the available MSMBuilder
+commands in one place.
+
+In general, the approach taken by the apps is to present a 1-1 representation of the MSMBuilder statistical
+models and transformers on the command line. The compound estimators like ``Pipeline``, ``Branch`` and
+``Workflow`` are not available on the command line.
+
+The Help Text
+-------------
+::
+
+    $ msmb -h
+
+    MSMBuilder: Software for building Markov State Models for Biomolecular Dynamics
+    ===============================================================================
+
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi sed nibh ut orci
+    suscipit scelerisque. Sed ligula augue, blandit ac eleifend eleifend, dapibus ac
+
+    Subcommands
+    -----------
+    tICA
+        Time-structure independent components analysis
+    vector
+        Transform molecular dynamics trajectories into multidimensional
+        timeseries in a suitable vector space
+    kcenters
+        K-centers clustering of multivariate timeseries
+    kmeans
+        K-means clustering of multivariate timeseries
+    markovmodel
+        Parameterize a Markov state model from labeled timeseries
+    
+
+The tICA App
 ------------
 
-MSMBuilder3 requires a functioning scientific python distribution, including the ``numpy``, ``scipy``, ``pandas``, ``matplotlib``, ``tables`` and ``ipython`` packages. You'll need to install ``MDTraj``, a package for manipulating molecular dynamics trajectories. See `Installing the Scipy Stack <http://www.scipy.org/install.html>`_ and `Getting Started with MDTraj <http://mdtraj.s3.amazonaws.com/getting_started.html>`_ for details.
+Here's the interface supplied by, for example, the tICA application. ::
 
-Once you have the dependencies, you can install msmbuilder3 using ``python setup.py install`` to add the ``msmb`` script to your ``PATH``, or you can run the ``msmb`` script directly in the source directory.
+  $ msmb tICA -h
+
+  Time-structure Independent Components Analysis
+  ==============================================
+
+  Command line application for the tICA method.
+
+  Reference
+  ---------
+  Schwantes, CR and Pande, VS. JCTC, 2013, 9 (4), pp 2000-09
+
+  tICA Options
+  ------------
+  --lag_time=<Int> (TICAApp.lag_time)
+      Default: 1
+      Lag time to use in calcualting the timelag correlation matrix. The units are
+      in frames.
+  --n_components=<Int> (TICApp.n_components)
+      Default: 5
+      Number of components to project onto. Input timeseries are projected into the
+      space spaned by the first `n_components` linearly uncorrelated components.
+
+  General Options
+  ---------------
+  --input=<String> (MSMBuilderApp.input)
+     Path to a VectorSet from which to load input data
+  --output=<String> (MSMBuilderApp.output)
+     Path to a VectorSet in which to save output data
+
 

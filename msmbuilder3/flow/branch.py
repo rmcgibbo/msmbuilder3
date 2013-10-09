@@ -1,7 +1,7 @@
 """Classes to build estimators on multiple parameter sets"""
 
 import numpy as np
-from base import BaseModeller
+from ..base import BaseModeller
 
 class Branch(BaseModeller):
     """
@@ -61,14 +61,15 @@ class Branch(BaseModeller):
         -------
         self    
         """
-    
+        pass
 
     def iter_models(self):
         """
-        return an iterable over the fit models
+        Iterate over the fit models
 
         Returns
         -------
         model_iter : iterable
             iterable containing all models
         """
+        pass
